@@ -35,7 +35,6 @@ jobs:
         run: |
           melos run test:dart
           melos run test:flutter
-          melos run test:web
 
       - name: Run Dart browser tests (Chrome, JS)
         run: melos run test:dart:chrome
