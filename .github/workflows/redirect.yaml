@@ -240,9 +240,7 @@ jobs:
         run: flutter pub get
 
       - name: Integration tests
-        run: |
-          flutter test integration_test/redirect_platform_test.dart `
-            -d windows --timeout 120s
+        run: flutter test integration_test/redirect_platform_test.dart -d windows --timeout 120s
 
   # ───────────────────────────────────────────────────────────
   # Web — widget tests on Chrome (real web APIs)

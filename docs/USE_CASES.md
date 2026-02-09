@@ -121,8 +121,8 @@ import 'package:redirect/redirect.dart';
 
 // Step 1 — initiate (on your login page)
 void onLoginTap() {
-  // Persist any state you need (e.g. PKCE verifier) before navigating away
-  // window.sessionStorage.setItem('pkce_verifier', verifier);
+  // Persist any state you need before navigating away
+  // window.sessionStorage.setItem('my_state', stateValue);
 
   final handle = runRedirect(
     url: authUrl,
