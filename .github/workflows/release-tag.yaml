@@ -1,0 +1,34 @@
+name: Tag and start release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  tag-and-release:
+    name: Create tags for release
+    permissions:
+      actions: write
+      contents: write
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'chore(release)')
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - uses: bluefireteam/melos-action@v3
+        with:
+          tag: true
+
+      - name: Trigger publish for each unpublished package
+        run: |
+          melos exec -c 1 --no-published --no-private --order-dependents -- \
+          gh workflow run release-publish.yaml \
+          --ref \$MELOS_PACKAGE_NAME-v\$MELOS_PACKAGE_VERSION
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
