@@ -124,8 +124,7 @@ void main() {
   //   - redirect_web_core's Jaspr integration tests
 
   group('RedirectWeb static helpers (direct API)', () {
-    testWidgets('hasPendingRedirect + resumePendingRedirect',
-        (tester) async {
+    testWidgets('hasPendingRedirect + resumePendingRedirect', (tester) async {
       if (!kIsWeb) return;
 
       // Clean state

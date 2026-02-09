@@ -14,28 +14,28 @@ void main() {
       methodChannelRedirect = MethodChannelRedirect();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        methodChannelRedirect.methodChannel,
-        (methodCall) async {
-          log.add(methodCall);
-          switch (methodCall.method) {
-            case 'run':
-              return 'myapp://callback?code=test123';
-            case 'cancel':
-              return null;
-            default:
-              return null;
-          }
-        },
-      );
+            methodChannelRedirect.methodChannel,
+            (methodCall) async {
+              log.add(methodCall);
+              switch (methodCall.method) {
+                case 'run':
+                  return 'myapp://callback?code=test123';
+                case 'cancel':
+                  return null;
+                default:
+                  return null;
+              }
+            },
+          );
     });
 
     tearDown(() {
       log.clear();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        methodChannelRedirect.methodChannel,
-        null,
-      );
+            methodChannelRedirect.methodChannel,
+            null,
+          );
     });
 
     test('run sends correct arguments', () async {
@@ -90,12 +90,12 @@ void main() {
     test('run returns RedirectCancelled on null response', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        methodChannelRedirect.methodChannel,
-        (methodCall) async {
-          log.add(methodCall);
-          return null;
-        },
-      );
+            methodChannelRedirect.methodChannel,
+            (methodCall) async {
+              log.add(methodCall);
+              return null;
+            },
+          );
 
       final handle = methodChannelRedirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
@@ -106,35 +106,40 @@ void main() {
       expect(result, isA<RedirectCancelled>());
     });
 
-    test('run returns RedirectCancelled on CANCELLED PlatformException',
-        () async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(
-        methodChannelRedirect.methodChannel,
-        (methodCall) async {
-          log.add(methodCall);
-          throw PlatformException(code: 'CANCELLED');
-        },
-      );
+    test(
+      'run returns RedirectCancelled on CANCELLED PlatformException',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              methodChannelRedirect.methodChannel,
+              (methodCall) async {
+                log.add(methodCall);
+                throw PlatformException(code: 'CANCELLED');
+              },
+            );
 
-      final handle = methodChannelRedirect.run(
-        url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
-      );
-      final result = await handle.result;
+        final handle = methodChannelRedirect.run(
+          url: Uri.parse('https://auth.example.com/authorize'),
+          callbackUrlScheme: 'myapp',
+        );
+        final result = await handle.result;
 
-      expect(result, isA<RedirectCancelled>());
-    });
+        expect(result, isA<RedirectCancelled>());
+      },
+    );
 
     test('run returns RedirectFailure on other PlatformException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        methodChannelRedirect.methodChannel,
-        (methodCall) async {
-          log.add(methodCall);
-          throw PlatformException(code: 'ERROR', message: 'Something failed');
-        },
-      );
+            methodChannelRedirect.methodChannel,
+            (methodCall) async {
+              log.add(methodCall);
+              throw PlatformException(
+                code: 'ERROR',
+                message: 'Something failed',
+              );
+            },
+          );
 
       final handle = methodChannelRedirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),

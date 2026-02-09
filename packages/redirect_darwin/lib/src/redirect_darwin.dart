@@ -14,7 +14,7 @@ class RedirectDarwinPlugin extends RedirectPlatform {
   ///
   /// The [api] parameter is exposed for testing only.
   RedirectDarwinPlugin({@visibleForTesting RedirectHostApi? api})
-      : _api = api ?? RedirectHostApi();
+    : _api = api ?? RedirectHostApi();
 
   final RedirectHostApi _api;
 

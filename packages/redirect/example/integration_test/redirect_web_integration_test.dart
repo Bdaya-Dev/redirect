@@ -138,8 +138,7 @@ void main() {
   //   - redirect_platform_test.dart for native platforms
 
   group('RedirectWeb static helpers (direct API)', () {
-    testWidgets('hasPendingRedirect + resumePendingRedirect',
-        (tester) async {
+    testWidgets('hasPendingRedirect + resumePendingRedirect', (tester) async {
       if (!kIsWeb) return;
 
       // Clean state

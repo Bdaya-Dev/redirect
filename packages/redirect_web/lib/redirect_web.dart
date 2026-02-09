@@ -16,8 +16,7 @@ class RedirectWebPlugin extends RedirectPlatform {
   ///
   /// [defaultWebOptions] specifies the default web-specific options.
   RedirectWebPlugin({
-    core.WebRedirectOptions defaultWebOptions =
-        const core.WebRedirectOptions(),
+    core.WebRedirectOptions defaultWebOptions = const core.WebRedirectOptions(),
   }) : _core = core.RedirectWeb(defaultWebOptions: defaultWebOptions);
 
   /// The underlying pure Dart web implementation.

@@ -32,9 +32,9 @@ class CliRedirectOptions {
     this.errorHtml,
     this.openBrowser = true,
   }) : assert(
-          port == null || portRange == null,
-          'Cannot specify both port and portRange',
-        );
+         port == null || portRange == null,
+         'Cannot specify both port and portRange',
+       );
 
   /// The key used in [RedirectOptions.platformOptions].
   static const String key = 'cli';

@@ -78,7 +78,9 @@ class RedirectCli implements RedirectHandler {
           },
           onError: (Object error, StackTrace stackTrace) {
             if (!completer.isCompleted) {
-              completer.complete(RedirectFailure(error: error, stackTrace: stackTrace));
+              completer.complete(
+                RedirectFailure(error: error, stackTrace: stackTrace),
+              );
             }
           },
         );
@@ -124,8 +126,7 @@ class RedirectCli implements RedirectHandler {
   }
 
   Future<HttpServer> _startServer(CliRedirectOptions cliOptions) async {
-    final bindAddress =
-        cliOptions.bindAddress ?? InternetAddress.loopbackIPv4;
+    final bindAddress = cliOptions.bindAddress ?? InternetAddress.loopbackIPv4;
 
     // Fixed port specified
     if (cliOptions.port != null) {
@@ -225,7 +226,8 @@ class RedirectCli implements RedirectHandler {
   ) async {
     // HTML-escape the error to prevent XSS attacks
     final escapedError = _htmlEscape(error);
-    final html = cliOptions.errorHtml ?? 
+    final html =
+        cliOptions.errorHtml ??
         _defaultErrorHtml.replaceAll('{{error}}', escapedError);
     request.response
       ..statusCode = HttpStatus.badRequest

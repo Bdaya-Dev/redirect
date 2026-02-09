@@ -10,6 +10,5 @@ void main() {
       RedirectWebPlugin.registerWith();
       expect(RedirectPlatform.instance, isA<RedirectWebPlugin>());
     });
-
   });
 }

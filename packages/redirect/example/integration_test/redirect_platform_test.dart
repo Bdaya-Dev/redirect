@@ -60,8 +60,9 @@ void main() {
   // ─────────────────────────────────────────────────
 
   group('Platform registration', () {
-    testWidgets('RedirectPlatform.instance is not the default stub',
-        (tester) async {
+    testWidgets('RedirectPlatform.instance is not the default stub', (
+      tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -119,8 +120,9 @@ void main() {
   // ─────────────────────────────────────────────────
 
   group('Cancel redirect flow', () {
-    testWidgets('cancel button appears during redirect and dismisses it',
-        (tester) async {
+    testWidgets('cancel button appears during redirect and dismisses it', (
+      tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -137,7 +139,8 @@ void main() {
         // The cancel is async — pump multiple frames to let it propagate.
         for (var i = 0; i < 20; i++) {
           await tester.pump(const Duration(milliseconds: 200));
-          final hasResult = find.text('Cancelled').evaluate().isNotEmpty ||
+          final hasResult =
+              find.text('Cancelled').evaluate().isNotEmpty ||
               find.text('Failed').evaluate().isNotEmpty ||
               find.text('Success').evaluate().isNotEmpty;
           if (hasResult) break;
@@ -147,7 +150,8 @@ void main() {
         // complete (Success) before cancel takes effect, or cancel may win.
         // The key assertion is that the app doesn't crash and reaches SOME
         // terminal state.
-        final hasTerminal = find.text('Cancelled').evaluate().isNotEmpty ||
+        final hasTerminal =
+            find.text('Cancelled').evaluate().isNotEmpty ||
             find.text('Failed').evaluate().isNotEmpty ||
             find.text('Success').evaluate().isNotEmpty;
         // If still loading after 4 seconds, the async cancel didn't fully

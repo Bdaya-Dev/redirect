@@ -165,7 +165,6 @@ void main() {
 
       // Should have both buttons
       expect(find.tag('button'), findsNComponents(2));
-
     });
 
     testComponents('shows success after redirect completes', (tester) async {
@@ -238,8 +237,9 @@ void main() {
       );
     });
 
-    testComponents('shows pending state for same-page redirects',
-        (tester) async {
+    testComponents('shows pending state for same-page redirects', (
+      tester,
+    ) async {
       final handler = _MockRedirectHandler(
         result: const RedirectPending(),
       );
@@ -260,8 +260,7 @@ void main() {
       );
     });
 
-    testComponents('passes correct URL and scheme to handler',
-        (tester) async {
+    testComponents('passes correct URL and scheme to handler', (tester) async {
       final handler = _MockRedirectHandler(
         result: RedirectSuccess(
           uri: Uri.parse('custom://done'),
@@ -355,8 +354,9 @@ void main() {
       expect(handler.runCount, equals(2));
     });
 
-    testComponents('component renders all redirect result types',
-        (tester) async {
+    testComponents('component renders all redirect result types', (
+      tester,
+    ) async {
       // Verify each RedirectResult enum value can be rendered
       for (final MapEntry(key: name, value: result) in {
         'success': RedirectSuccess(uri: Uri.parse('myapp://cb')),
@@ -377,7 +377,8 @@ void main() {
         expect(
           find.text('Status: $name'),
           findsOneComponent,
-          reason: 'Expected status "$name" for result type '
+          reason:
+              'Expected status "$name" for result type '
               '${result.runtimeType}',
         );
       }

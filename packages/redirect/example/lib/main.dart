@@ -167,8 +167,7 @@ class _HomePageState extends State<HomePage> {
               decoration: const InputDecoration(
                 labelText: 'Authorization URL',
                 border: OutlineInputBorder(),
-                helperText:
-                  'The URL to redirect to (e.g., sign-in or consent)',
+                helperText: 'The URL to redirect to (e.g., sign-in or consent)',
               ),
               maxLines: 3,
             ),
@@ -180,8 +179,7 @@ class _HomePageState extends State<HomePage> {
               decoration: const InputDecoration(
                 labelText: 'Callback URL Scheme',
                 border: OutlineInputBorder(),
-                helperText:
-                    'Custom URL scheme to intercept (e.g., myapp)',
+                helperText: 'Custom URL scheme to intercept (e.g., myapp)',
               ),
             ),
             const SizedBox(height: 16),
@@ -234,12 +232,12 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 8),
             Text(
-                kIsWeb
+              kIsWeb
                   ? 'Uses httpbin.org to simulate a redirect. '
-                      'The callback goes to callback.html which '
-                      'sends the result back via BroadcastChannel.'
+                        'The callback goes to callback.html which '
+                        'sends the result back via BroadcastChannel.'
                   : 'Uses httpbin.org to simulate a redirect '
-                      'back to the myapp:// custom URL scheme.',
+                        'back to the myapp:// custom URL scheme.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -365,19 +363,16 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 8),
             Text(
               switch (_webMode) {
-                WebRedirectMode.popup =>
-                  'Opens a centered popup window.',
-                WebRedirectMode.newTab =>
-                  'Opens in a new browser tab.',
+                WebRedirectMode.popup => 'Opens a centered popup window.',
+                WebRedirectMode.newTab => 'Opens in a new browser tab.',
                 WebRedirectMode.samePage =>
                   'Navigates current page (returns Pending).',
                 WebRedirectMode.hiddenIframe =>
                   'Silent refresh via hidden iframe.',
               },
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color:
-                        Theme.of(context).colorScheme.secondary,
-                  ),
+                color: Theme.of(context).colorScheme.secondary,
+              ),
             ),
 
             // Popup dimensions
@@ -392,8 +387,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Width: $_popupWidth px'),
                         Slider(
@@ -413,8 +407,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Height: $_popupHeight px'),
                         Slider(
@@ -454,8 +447,8 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.blue,
                 icon: Icons.info,
                 text:
-                  'Hidden iframe is for silent refresh. '
-                  'Many providers block this with '
+                    'Hidden iframe is for silent refresh. '
+                    'Many providers block this with '
                     'X-Frame-Options.',
               ),
             ],
@@ -531,92 +524,91 @@ class _HomePageState extends State<HomePage> {
 
     return switch (result) {
       RedirectSuccess(:final uri) => _ResultCard(
-          title: 'Success',
-          color: Colors.green,
-          icon: Icons.check_circle,
-          children: [
-            _ResultRow('Scheme', uri.scheme),
-            _ResultRow('Host', uri.host),
-            _ResultRow(
-              'Path',
-              uri.path.isEmpty ? '/' : uri.path,
-            ),
-            const Divider(),
-            Text(
-              'Query Parameters:',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            ...uri.queryParameters.entries.map(
-              (e) => _ResultRow(
-                e.key,
-                e.value,
-                canCopy: true,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _ResultRow(
-              'Full URI',
-              uri.toString(),
+        title: 'Success',
+        color: Colors.green,
+        icon: Icons.check_circle,
+        children: [
+          _ResultRow('Scheme', uri.scheme),
+          _ResultRow('Host', uri.host),
+          _ResultRow(
+            'Path',
+            uri.path.isEmpty ? '/' : uri.path,
+          ),
+          const Divider(),
+          Text(
+            'Query Parameters:',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          ...uri.queryParameters.entries.map(
+            (e) => _ResultRow(
+              e.key,
+              e.value,
               canCopy: true,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          _ResultRow(
+            'Full URI',
+            uri.toString(),
+            canCopy: true,
+          ),
+        ],
+      ),
       RedirectCancelled() => const _ResultCard(
-          title: 'Cancelled',
-          color: Colors.orange,
-          icon: Icons.cancel,
-          children: [
-            Text(
-              'The redirect was cancelled by user or '
-              'timed out.',
-            ),
-          ],
-        ),
+        title: 'Cancelled',
+        color: Colors.orange,
+        icon: Icons.cancel,
+        children: [
+          Text(
+            'The redirect was cancelled by user or '
+            'timed out.',
+          ),
+        ],
+      ),
       RedirectPending() => const _ResultCard(
-          title: 'Pending',
-          color: Colors.blue,
-          icon: Icons.hourglass_empty,
-          children: [
-            Text(
-              'Redirect initiated but result will arrive '
-              'later. This typically occurs with same-page '
-              'redirects on web.',
-            ),
-          ],
-        ),
-      RedirectFailure(:final error, :final stackTrace) =>
-        _ResultCard(
-          title: 'Failed',
-          color: Colors.red,
-          icon: Icons.error,
-          children: [
-            _ResultRow(
-              'Error',
-              error.toString(),
-              canCopy: true,
-            ),
-            if (stackTrace != null && kDebugMode) ...[
-              const SizedBox(height: 8),
-              ExpansionTile(
-                title: const Text('Stack Trace'),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.grey[200],
-                    child: SelectableText(
-                      stackTrace.toString(),
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 10,
-                      ),
+        title: 'Pending',
+        color: Colors.blue,
+        icon: Icons.hourglass_empty,
+        children: [
+          Text(
+            'Redirect initiated but result will arrive '
+            'later. This typically occurs with same-page '
+            'redirects on web.',
+          ),
+        ],
+      ),
+      RedirectFailure(:final error, :final stackTrace) => _ResultCard(
+        title: 'Failed',
+        color: Colors.red,
+        icon: Icons.error,
+        children: [
+          _ResultRow(
+            'Error',
+            error.toString(),
+            canCopy: true,
+          ),
+          if (stackTrace != null && kDebugMode) ...[
+            const SizedBox(height: 8),
+            ExpansionTile(
+              title: const Text('Stack Trace'),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  color: Colors.grey[200],
+                  child: SelectableText(
+                    stackTrace.toString(),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 10,
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ],
-        ),
+        ],
+      ),
     };
   }
 }
@@ -649,13 +641,10 @@ class _ResultCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),

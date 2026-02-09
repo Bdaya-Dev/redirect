@@ -38,8 +38,7 @@ void main() {
   // ─────────────────────────────────────────────────
 
   group('Iframe mode >', () {
-    test('completes with RedirectSuccess when callback is broadcast',
-        () async {
+    test('completes with RedirectSuccess when callback is broadcast', () async {
       const channelName = 'test_iframe_success';
 
       final handle = redirect.runWithWebOptions(
@@ -594,8 +593,7 @@ void main() {
     });
 
     test('resumePendingRedirect accepts any URI when no scheme stored', () {
-      web.window.sessionStorage
-        ..setItem('redirect_pending', 'true');
+      web.window.sessionStorage..setItem('redirect_pending', 'true');
       // Intentionally NOT setting redirect_pending_scheme
 
       final result = RedirectWeb.resumePendingRedirect();
@@ -636,10 +634,8 @@ void main() {
         Uri.parse('myapp://callback?token=xyz'),
       );
 
-      final msg1 = await received1.future
-          .timeout(const Duration(seconds: 2));
-      final msg2 = await received2.future
-          .timeout(const Duration(seconds: 2));
+      final msg1 = await received1.future.timeout(const Duration(seconds: 2));
+      final msg2 = await received2.future.timeout(const Duration(seconds: 2));
 
       expect(msg1, equals('myapp://callback?token=xyz'));
       expect(msg2, equals('myapp://callback?token=xyz'));
@@ -662,8 +658,7 @@ void main() {
         channelName: channelName,
       );
 
-      final msg = await received.future
-          .timeout(const Duration(seconds: 2));
+      final msg = await received.future.timeout(const Duration(seconds: 2));
       expect(msg, equals('https://example.com/callback?code=123'));
 
       listener.close();
@@ -681,8 +676,7 @@ void main() {
 
     test('handles malformed localStorage gracefully', () {
       // Corrupt localStorage value
-      web.window.localStorage
-          .setItem('redirect_channels_myapp', 'not-json');
+      web.window.localStorage.setItem('redirect_channels_myapp', 'not-json');
 
       expect(
         () => RedirectWeb.handleCallback(Uri.parse('myapp://callback')),
@@ -708,8 +702,9 @@ void main() {
         ),
       );
 
-      final raw = web.window.localStorage
-          .getItem('redirect_channels_testscheme');
+      final raw = web.window.localStorage.getItem(
+        'redirect_channels_testscheme',
+      );
       expect(raw, isNotNull);
       final channels = (jsonDecode(raw!) as List<dynamic>).cast<String>();
       expect(channels, contains(channelName));
@@ -733,11 +728,11 @@ void main() {
       await handle.cancel();
       await handle.result;
 
-      final raw = web.window.localStorage
-          .getItem('redirect_channels_cleanscheme');
+      final raw = web.window.localStorage.getItem(
+        'redirect_channels_cleanscheme',
+      );
       if (raw != null) {
-        final channels =
-            (jsonDecode(raw) as List<dynamic>).cast<String>();
+        final channels = (jsonDecode(raw) as List<dynamic>).cast<String>();
         expect(channels, isNot(contains(channelName)));
       }
     });
@@ -766,8 +761,7 @@ void main() {
         ),
       );
 
-      final raw = web.window.localStorage
-          .getItem('redirect_channels_shared');
+      final raw = web.window.localStorage.getItem('redirect_channels_shared');
       expect(raw, isNotNull);
       final channels = (jsonDecode(raw!) as List<dynamic>).cast<String>();
       expect(channels, contains(ch1));
@@ -934,8 +928,7 @@ void main() {
       );
     });
 
-    test('handleCallback auto-discovers channels from localStorage',
-        () async {
+    test('handleCallback auto-discovers channels from localStorage', () async {
       const channelName = 'test_e2e_autodiscovery';
 
       final handle = redirect.runWithWebOptions(
@@ -950,8 +943,7 @@ void main() {
       await _nextTick();
 
       // Verify the channel is registered in localStorage
-      final raw =
-          web.window.localStorage.getItem('redirect_channels_myapp');
+      final raw = web.window.localStorage.getItem('redirect_channels_myapp');
       expect(raw, isNotNull);
       expect(
         (jsonDecode(raw!) as List<dynamic>).cast<String>(),

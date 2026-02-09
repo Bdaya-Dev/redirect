@@ -28,16 +28,16 @@ import 'package:redirect_platform_interface/redirect_platform_interface.dart';
 
 export 'package:redirect_platform_interface/redirect_platform_interface.dart'
     show
-    RedirectCancelled,
-    RedirectFailure,
-    RedirectHandle,
-    RedirectHandler,
-    RedirectOptions,
-    RedirectPending,
-    RedirectResult,
-    RedirectSuccess,
-    WebRedirectMode,
-    WebRedirectOptions;
+        RedirectCancelled,
+        RedirectFailure,
+        RedirectHandle,
+        RedirectHandler,
+        RedirectOptions,
+        RedirectPending,
+        RedirectResult,
+        RedirectSuccess,
+        WebRedirectMode,
+        WebRedirectOptions;
 
 /// Opens [url] and waits for a redirect matching [callbackUrlScheme].
 ///

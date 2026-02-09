@@ -3,13 +3,11 @@ import 'package:pigeon/pigeon.dart';
 @ConfigurePigeon(
   PigeonOptions(
     dartOut: 'lib/src/messages.g.dart',
-    kotlinOut:
-        'android/src/main/kotlin/com/bdayadev/Messages.g.kt',
+    kotlinOut: 'android/src/main/kotlin/com/bdayadev/Messages.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.bdayadev'),
     dartPackageName: 'redirect_android',
   ),
 )
-
 /// Options for Android Custom Tabs.
 class AndroidOptions {
   AndroidOptions({

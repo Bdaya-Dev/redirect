@@ -110,22 +110,26 @@ void main() {
       expect(result, isA<RedirectCancelled>());
     });
 
-    test('run returns RedirectCancelled on CANCELLED PlatformException',
-        () async {
-      fakeApi.runException = PlatformException(code: 'CANCELLED');
+    test(
+      'run returns RedirectCancelled on CANCELLED PlatformException',
+      () async {
+        fakeApi.runException = PlatformException(code: 'CANCELLED');
 
-      final handle = redirect.run(
-        url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
-      );
-      final result = await handle.result;
+        final handle = redirect.run(
+          url: Uri.parse('https://auth.example.com/authorize'),
+          callbackUrlScheme: 'myapp',
+        );
+        final result = await handle.result;
 
-      expect(result, isA<RedirectCancelled>());
-    });
+        expect(result, isA<RedirectCancelled>());
+      },
+    );
 
     test('run returns RedirectFailure on other PlatformException', () async {
-      fakeApi.runException =
-          PlatformException(code: 'ERROR', message: 'Something failed');
+      fakeApi.runException = PlatformException(
+        code: 'ERROR',
+        message: 'Something failed',
+      );
 
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),

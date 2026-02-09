@@ -36,12 +36,14 @@ void main() {
           callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
-      ).thenReturn(RedirectHandle(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-        result: Future.value(RedirectSuccess(uri: successUri)),
-        cancel: () async {},
-      ));
+      ).thenReturn(
+        RedirectHandle(
+          url: testUrl,
+          callbackUrlScheme: callbackScheme,
+          result: Future.value(RedirectSuccess(uri: successUri)),
+          cancel: () async {},
+        ),
+      );
 
       final handle = runRedirect(
         url: testUrl,
@@ -68,12 +70,14 @@ void main() {
           callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
-      ).thenReturn(RedirectHandle(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-        result: Future.value(const RedirectCancelled()),
-        cancel: () async {},
-      ));
+      ).thenReturn(
+        RedirectHandle(
+          url: testUrl,
+          callbackUrlScheme: callbackScheme,
+          result: Future.value(const RedirectCancelled()),
+          cancel: () async {},
+        ),
+      );
 
       const options = RedirectOptions(
         timeout: Duration(seconds: 30),
@@ -102,12 +106,14 @@ void main() {
           callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
-      ).thenReturn(RedirectHandle(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-        result: Future.value(const RedirectCancelled()),
-        cancel: () async {},
-      ));
+      ).thenReturn(
+        RedirectHandle(
+          url: testUrl,
+          callbackUrlScheme: callbackScheme,
+          result: Future.value(const RedirectCancelled()),
+          cancel: () async {},
+        ),
+      );
 
       final handle = runRedirect(
         url: testUrl,
@@ -126,12 +132,14 @@ void main() {
           callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
-      ).thenReturn(RedirectHandle(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-        result: Future.value(RedirectFailure(error: error)),
-        cancel: () async {},
-      ));
+      ).thenReturn(
+        RedirectHandle(
+          url: testUrl,
+          callbackUrlScheme: callbackScheme,
+          result: Future.value(RedirectFailure(error: error)),
+          cancel: () async {},
+        ),
+      );
 
       final handle = runRedirect(
         url: testUrl,
@@ -150,12 +158,14 @@ void main() {
           callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
-      ).thenReturn(RedirectHandle(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-        result: Future.value(const RedirectPending()),
-        cancel: () async {},
-      ));
+      ).thenReturn(
+        RedirectHandle(
+          url: testUrl,
+          callbackUrlScheme: callbackScheme,
+          result: Future.value(const RedirectPending()),
+          cancel: () async {},
+        ),
+      );
 
       final handle = runRedirect(
         url: testUrl,

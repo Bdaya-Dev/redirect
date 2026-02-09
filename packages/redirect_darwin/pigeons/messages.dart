@@ -8,7 +8,6 @@ import 'package:pigeon/pigeon.dart';
     dartPackageName: 'redirect_darwin',
   ),
 )
-
 /// Request to start a redirect-based authentication flow.
 class RunRequest {
   RunRequest({
