@@ -18,33 +18,30 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.38.0
           channel: stable
           cache: true
 
-      - name: Install workspace dependencies
-        run: dart pub get
-
-      - name: Bootstrap melos
-        run: dart run melos bootstrap
+      - uses: bluefireteam/melos-action@v3
 
       - name: Analyze
-        run: dart run melos run analyze
+        run: melos run analyze
 
       - name: Run tests with coverage
         run: |
-          dart run melos run test:dart
-          dart run melos run test:flutter
-          dart run melos run test:web
+          melos run test:dart
+          melos run test:flutter
+          melos run test:web
 
       - name: Run Dart browser tests (Chrome, JS)
-        run: dart run melos run test:dart:chrome
+        run: melos run test:dart:chrome
 
       - name: Run Dart browser tests (Chrome, WASM)
-        run: dart run melos run test:dart:wasm
+        run: melos run test:dart:wasm
 
       - name: Combine coverage
         run: |
@@ -65,3 +62,21 @@ jobs:
           files: coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+  release-verify:
+    name: Verify packages are releasable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: bluefireteam/melos-action@v3
+        with:
+          run-versioning: true
+          publish-dry-run: true

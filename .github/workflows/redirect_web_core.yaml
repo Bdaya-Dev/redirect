@@ -21,14 +21,14 @@ jobs:
   build:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
     with:
-      flutter_version: 3.38.0
+      flutter_channel: stable
       working_directory: packages/redirect_web_core
 
   # Dart web (JS) — Chrome browser tests
   build-chrome:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
     with:
-      flutter_version: 3.38.0
+      flutter_channel: stable
       working_directory: packages/redirect_web_core
       min_coverage: 0
 
@@ -45,7 +45,6 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.38.0
           channel: stable
 
       - name: Install dependencies

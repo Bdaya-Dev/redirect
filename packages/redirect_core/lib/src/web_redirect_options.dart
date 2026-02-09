@@ -1,6 +1,5 @@
 import 'package:meta/meta.dart';
 import 'package:redirect_core/redirect_core.dart';
-import 'package:redirect_core/src/web_redirect_mode.dart';
 
 /// Web-specific options for redirect-based flows.
 ///

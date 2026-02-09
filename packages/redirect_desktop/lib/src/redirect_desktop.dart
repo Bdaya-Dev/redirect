@@ -13,7 +13,7 @@ import 'package:redirect_platform_interface/redirect_platform_interface.dart';
 /// This is a pure Dart implementation that works on Linux and Windows
 /// without any platform-specific native code or dependencies.
 ///
-/// On macOS, [redirect_darwin] is used instead (ASWebAuthenticationSession),
+/// On macOS, the `redirect_darwin` package is used instead (ASWebAuthenticationSession),
 /// but this plugin includes a fallback `open` command for macOS in case
 /// it is ever registered on that platform.
 class RedirectDesktopPlugin extends RedirectPlatform {
