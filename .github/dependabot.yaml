@@ -1,0 +1,43 @@
+version: 2
+enable-beta-ecosystems: true
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect/example"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect_platform_interface"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect_android"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect_ios"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect_linux"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect_macos"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect_web"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "pub"
+    directory: "/redirect_windows"
+    schedule:
+      interval: "daily"

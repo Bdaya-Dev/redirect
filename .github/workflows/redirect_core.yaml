@@ -1,0 +1,27 @@
+name: redirect_core
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/redirect_core.yaml"
+      - "packages/redirect_core/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/redirect_core.yaml"
+      - "packages/redirect_core/**"
+
+jobs:
+  build:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    with:
+      dart_sdk: stable
+      working_directory: packages/redirect_core
+
+  pana:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/pana.yml@v1

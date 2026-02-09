@@ -1,0 +1,31 @@
+name: redirect_web
+description: >
+  Flutter web implementation of the redirect plugin.
+  Wraps redirect_web_core for Flutter plugin registration.
+version: 0.1.0+1
+
+resolution: workspace
+
+environment:
+  sdk: ^3.9.0
+
+flutter:
+  plugin:
+    implements: redirect
+    platforms:
+      web:
+        pluginClass: RedirectWebPlugin
+        fileName: redirect_web.dart
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  redirect_platform_interface: ^0.1.0
+  redirect_web_core: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.0.0

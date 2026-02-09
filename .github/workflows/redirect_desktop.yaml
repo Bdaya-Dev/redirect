@@ -1,0 +1,27 @@
+name: redirect_desktop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/redirect_desktop.yaml"
+      - "packages/redirect_desktop/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/redirect_desktop.yaml"
+      - "packages/redirect_desktop/**"
+
+jobs:
+  build:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    with:
+      flutter_version: 3.35.0
+      working_directory: packages/redirect_desktop
+
+  pana:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/pana.yml@v1

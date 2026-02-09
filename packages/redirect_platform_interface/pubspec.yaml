@@ -1,0 +1,19 @@
+name: redirect_platform_interface
+description: A common platform interface for the redirect plugin.
+version: 0.1.0+1
+
+resolution: workspace
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  plugin_platform_interface: ^2.1.8
+  redirect_core: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.0.0

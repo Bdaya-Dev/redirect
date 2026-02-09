@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirect Callback</title>
+</head>
+<body>
+  <p>&#x2713; Complete. You can close this window.</p>
+
+  <!--
+    No JavaScript needed here! The opener reads the callback URL directly
+    from this window via the Same-Origin Policy.
+
+    Only add the following script if your auth/payment provider sets
+    Cross-Origin-Opener-Policy headers that sever the opener reference:
+
+      <script src="redirect_callback.js"></script>
+
+    Or register the Service Worker for a fully zero-file approach:
+
+      RedirectWeb.registerServiceWorker();
+  -->
+</body>
+</html>

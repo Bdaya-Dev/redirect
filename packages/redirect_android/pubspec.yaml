@@ -1,0 +1,31 @@
+name: redirect_android
+description: Android implementation of the redirect plugin
+version: 0.1.0+1
+
+resolution: workspace
+
+environment:
+  sdk: ^3.9.0
+
+flutter:
+  plugin:
+    implements: redirect
+    platforms:
+      android:
+        package: com.bdayadev
+        pluginClass: RedirectPlugin
+        dartPluginClass: RedirectAndroidPlugin
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.12.0
+  redirect_core: ^0.1.0
+  redirect_platform_interface: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  pigeon: ^26.1.7
+  plugin_platform_interface: ^2.1.8
+  very_good_analysis: ^10.0.0

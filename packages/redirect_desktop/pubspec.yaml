@@ -1,0 +1,34 @@
+name: redirect_desktop
+description: >
+  Desktop implementation of the redirect plugin using pure Dart.
+  Uses a loopback HTTP server to handle OAuth/redirect callbacks.
+version: 0.1.0
+repository: https://github.com/Bdaya-Dev/redirect
+issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+
+resolution: workspace
+
+environment:
+  sdk: ^3.9.0
+
+flutter:
+  plugin:
+    implements: redirect
+    platforms:
+      linux:
+        dartPluginClass: RedirectDesktopPlugin
+      windows:
+        dartPluginClass: RedirectDesktopPlugin
+
+dependencies:
+  ffi: ^2.1.0
+  flutter:
+    sdk: flutter
+  meta: ^1.12.0
+  redirect_core: ^0.1.0
+  redirect_platform_interface: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.0.0

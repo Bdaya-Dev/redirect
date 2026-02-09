@@ -1,0 +1,28 @@
+name: redirect_web
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/redirect_web.yaml"
+      - "packages/redirect_web/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/redirect_web.yaml"
+      - "packages/redirect_web/**"
+
+jobs:
+  build:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    with:
+      flutter_version: 3.35.0
+      working_directory: packages/redirect_web
+
+  pana:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/pana.yml@v1
+

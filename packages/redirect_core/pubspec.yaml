@@ -1,0 +1,24 @@
+name: redirect_core
+description: >
+  Core types and interfaces for redirect-based flows. Platform-agnostic, 
+  can be used with pure Dart, Dart web, or Flutter applications.
+version: 0.1.0
+repository: https://github.com/Bdaya-Dev/redirect
+issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+topics:
+  - redirect
+  - oauth
+  - deep-links
+  - url-launcher
+
+resolution: workspace
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  meta: ^1.12.0
+
+dev_dependencies:
+  test: ^1.25.6
+  very_good_analysis: ^10.0.0

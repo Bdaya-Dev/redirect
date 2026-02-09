@@ -1,0 +1,58 @@
+name: redirect_web_core
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/redirect_web_core.yaml"
+      - "packages/redirect_web_core/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/redirect_web_core.yaml"
+      - "packages/redirect_web_core/**"
+
+jobs:
+  # VM tests: unit tests + Jaspr integration tests
+  build:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    with:
+      dart_sdk: stable
+      working_directory: packages/redirect_web_core
+
+  # Dart web (JS) — Chrome browser tests
+  build-chrome:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    with:
+      dart_sdk: stable
+      working_directory: packages/redirect_web_core
+      platform: chrome
+      min_coverage: 0
+
+  # Dart web (WASM / dart2wasm) — Chrome browser tests compiled to WASM
+  build-chrome-wasm:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: packages/redirect_web_core
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Run browser tests (dart2wasm)
+        run: dart test -p chrome -c dart2wasm
+
+  pana:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/pana.yml@v1

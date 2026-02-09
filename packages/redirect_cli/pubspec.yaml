@@ -1,0 +1,20 @@
+name: redirect_cli
+description: >
+  Pure Dart CLI implementation of redirect-based flows.
+  Ideal for command-line tools, servers, and non-Flutter Dart applications.
+version: 0.1.0
+repository: https://github.com/Bdaya-Dev/redirect
+issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+
+resolution: workspace
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  meta: ^1.12.0
+  redirect_core: ^0.1.0
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^10.0.0

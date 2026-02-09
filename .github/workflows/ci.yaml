@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  semantic-pull-request:
+    if: ${{ github.event_name == 'pull_request' }}
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@v1
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.35.0
+          channel: stable
+          cache: true
+
+      - name: Install workspace dependencies
+        run: dart pub get
+
+      - name: Bootstrap melos
+        run: dart run melos bootstrap
+
+      - name: Analyze
+        run: dart run melos run analyze
+
+      - name: Run tests with coverage
+        run: |
+          dart run melos run test:dart
+          dart run melos run test:flutter
+          dart run melos run test:web
+
+      - name: Run Dart browser tests (Chrome, JS)
+        run: dart run melos run test:dart:chrome
+
+      - name: Run Dart browser tests (Chrome, WASM)
+        run: dart run melos run test:dart:wasm
+
+      - name: Combine coverage
+        run: |
+          dart pub global activate combine_coverage
+          dart pub global activate remove_from_coverage
+          dart pub global run combine_coverage --repo-path="${{ github.workspace }}"
+          dart pub global run remove_from_coverage:remove_from_coverage -f coverage/lcov.info -r '\\.g\\.dart$'
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
