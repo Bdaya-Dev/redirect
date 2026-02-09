@@ -1,3 +1,6 @@
+// Pigeon-generated interface uses pigeonVar_ naming.
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:redirect_android/redirect_android.dart';
@@ -114,7 +117,7 @@ void main() {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
         callbackUrlScheme: 'myapp',
-        options: RedirectOptions(
+        options: const RedirectOptions(
           platformOptions: {AndroidRedirectOptions.key: androidOpts},
         ),
       );
@@ -231,7 +234,7 @@ void main() {
 
     test('fromOptions extracts android options from platformOptions', () {
       const androidOpts = AndroidRedirectOptions(showTitle: true);
-      final options = RedirectOptions(
+      const options = RedirectOptions(
         platformOptions: {AndroidRedirectOptions.key: androidOpts},
       );
 

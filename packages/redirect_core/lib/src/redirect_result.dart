@@ -20,7 +20,10 @@ import 'package:meta/meta.dart';
 /// key-value data that platform implementations or callers can attach:
 ///
 /// ```dart
-/// RedirectSuccess(uri: uri, metadata: {'provider': 'google', 'latencyMs': 230});
+/// RedirectSuccess(
+///   uri: uri,
+///   metadata: {'provider': 'google', 'latencyMs': 230},
+/// );
 /// ```
 @immutable
 sealed class RedirectResult {

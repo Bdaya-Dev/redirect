@@ -1,4 +1,3 @@
-// ignore_for_file: avoid_print
 // Integration tests for the redirect Flutter example app on web.
 //
 // These tests compile Flutter widgets to JS and run in Chrome, giving access
@@ -7,13 +6,11 @@
 // Run with:
 //   cd packages/redirect/example
 //   flutter test test/redirect_web_integration_test.dart -d chrome
-library;
 
 import 'dart:convert';
 import 'dart:js_interop';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:redirect/redirect.dart';
 import 'package:redirect_example/main.dart' as app;
@@ -157,7 +154,7 @@ void main() {
       final received = <String>[];
       final listener = web.BroadcastChannel(channelName)
         ..onmessage = (web.MessageEvent event) {
-          received.add((event.data as JSString).toDart);
+          received.add((event.data! as JSString).toDart);
         }.toJS;
 
       RedirectWeb.handleCallback(

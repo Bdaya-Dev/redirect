@@ -1,5 +1,6 @@
 import 'package:redirect_core/src/redirect_handle.dart';
 import 'package:redirect_core/src/redirect_options.dart';
+import 'package:redirect_core/src/redirect_result.dart';
 
 /// Abstract interface for handling redirect-based flows.
 ///
@@ -32,13 +33,14 @@ import 'package:redirect_core/src/redirect_options.dart';
 ///     print('Error: $error');
 /// }
 /// ```
+// ignore: one_member_abstracts
 abstract interface class RedirectHandler {
   /// Opens [url] and waits for a redirect matching [callbackUrlScheme].
   ///
   /// Returns a [RedirectHandle] **synchronously**. This is important on web,
   /// where the browser window must be opened in the user-gesture call stack
   /// to avoid popup blockers. The actual result is available via
-  /// [RedirectHandle.result].
+  /// `RedirectHandle.result`.
   ///
   /// ## Parameters
   ///
@@ -57,7 +59,7 @@ abstract interface class RedirectHandler {
   ///
   /// ## Error Handling
   ///
-  /// The [RedirectHandle.result] future does not throw exceptions for
+  /// The `RedirectHandle.result` future does not throw exceptions for
   /// expected outcomes. Instead, it completes with appropriate
   /// [RedirectResult] subtypes:
   /// - [RedirectSuccess] - Callback received successfully

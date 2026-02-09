@@ -15,8 +15,8 @@ library;
 // Run with:
 //   cd packages/redirect_web_core
 //   dart test test/integration/redirect_jaspr_integration_test.dart
-import 'package:jaspr/jaspr.dart';
 import 'package:jaspr/dom.dart';
+import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_test/jaspr_test.dart';
 import 'package:redirect_core/redirect_core.dart';
 
@@ -24,8 +24,8 @@ import 'package:redirect_core/redirect_core.dart';
 // Jaspr component that drives a redirect flow
 // ─────────────────────────────────────────────────
 
-/// A Jaspr component that shows how to integrate any [RedirectHandler]
-/// (including [RedirectWeb] from redirect_web_core) into a Jaspr app.
+/// A Jaspr component that shows how to integrate any `RedirectHandler`
+/// (including `RedirectWeb` from redirect_web_core) into a Jaspr app.
 class RedirectDemo extends StatefulComponent {
   const RedirectDemo({
     required this.handler,
@@ -91,12 +91,12 @@ class _RedirectDemoState extends State<RedirectDemo> {
       p([Component.text('Status: $_status')]),
       if (_detail.isNotEmpty) p([Component.text('Detail: $_detail')]),
       button(
-        [Component.text('Start Redirect')],
+        const [Component.text('Start Redirect')],
         id: 'start-btn',
         onClick: _startRedirect,
       ),
       button(
-        [Component.text('Cancel')],
+        const [Component.text('Cancel')],
         id: 'cancel-btn',
         onClick: _cancelRedirect,
       ),

@@ -6,11 +6,11 @@ import 'package:redirect_core/src/redirect_result.dart';
 
 /// A handle to a pending redirect operation.
 ///
-/// Returned synchronously by [RedirectHandler.run], allowing the redirect
+/// Returned synchronously by `RedirectHandler.run`, allowing the redirect
 /// to be initiated in the user-gesture call stack (important for avoiding
 /// popup blockers on web) while the result is awaited separately.
 ///
-/// Also exposes the original parameters passed to [RedirectHandler.run],
+/// Also exposes the original parameters passed to `RedirectHandler.run`,
 /// so callers can inspect or log them without keeping separate references.
 ///
 /// ## Usage
@@ -39,9 +39,9 @@ class RedirectHandle {
   const RedirectHandle({
     required this.url,
     required this.callbackUrlScheme,
-    this.options = const RedirectOptions(),
     required this.result,
     required this.cancel,
+    this.options = const RedirectOptions(),
   });
 
   /// The URL that was opened for the redirect flow.

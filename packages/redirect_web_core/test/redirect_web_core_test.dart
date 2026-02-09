@@ -48,7 +48,7 @@ void main() {
 
     test('fromOptions extracts web options from platformOptions', () {
       const webOpts = WebRedirectOptions(mode: WebRedirectMode.hiddenIframe);
-      final options = RedirectOptions(
+      const options = RedirectOptions(
         platformOptions: {WebRedirectOptions.key: webOpts},
       );
 

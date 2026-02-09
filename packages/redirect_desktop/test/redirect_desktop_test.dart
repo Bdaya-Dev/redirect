@@ -64,7 +64,7 @@ void main() {
 
     test('fromOptions extracts desktop options from platformOptions', () {
       const desktopOpts = DesktopRedirectOptions(port: 9090);
-      final options = RedirectOptions(
+      const options = RedirectOptions(
         platformOptions: {DesktopRedirectOptions.key: desktopOpts},
       );
 

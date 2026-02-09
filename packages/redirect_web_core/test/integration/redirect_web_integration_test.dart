@@ -387,7 +387,6 @@ void main() {
           timeout: Duration(seconds: 5),
         ),
         webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.popup,
           broadcastChannelName: channelName,
         ),
       );
@@ -416,7 +415,6 @@ void main() {
           timeout: Duration(seconds: 5),
         ),
         webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.popup,
           broadcastChannelName: channelName,
         ),
       );
@@ -593,7 +591,7 @@ void main() {
     });
 
     test('resumePendingRedirect accepts any URI when no scheme stored', () {
-      web.window.sessionStorage..setItem('redirect_pending', 'true');
+      web.window.sessionStorage.setItem('redirect_pending', 'true');
       // Intentionally NOT setting redirect_pending_scheme
 
       final result = RedirectWeb.resumePendingRedirect();
@@ -622,12 +620,12 @@ void main() {
 
       final listener1 = web.BroadcastChannel(ch1)
         ..onmessage = (web.MessageEvent event) {
-          received1.complete((event.data as JSString).toDart);
+          received1.complete((event.data! as JSString).toDart);
         }.toJS;
 
       final listener2 = web.BroadcastChannel(ch2)
         ..onmessage = (web.MessageEvent event) {
-          received2.complete((event.data as JSString).toDart);
+          received2.complete((event.data! as JSString).toDart);
         }.toJS;
 
       RedirectWeb.handleCallback(
@@ -650,7 +648,7 @@ void main() {
       final received = Completer<String>();
       final listener = web.BroadcastChannel(channelName)
         ..onmessage = (web.MessageEvent event) {
-          received.complete((event.data as JSString).toDart);
+          received.complete((event.data! as JSString).toDart);
         }.toJS;
 
       RedirectWeb.handleCallback(
@@ -799,15 +797,13 @@ void main() {
     });
 
     test('run() uses defaultWebOptions', () {
-      final r = RedirectWeb(
+      RedirectWeb(
         defaultWebOptions: const WebRedirectOptions(
           mode: WebRedirectMode.hiddenIframe,
           broadcastChannelName: 'test_default_opts',
           iframeId: 'default_opts_iframe',
         ),
-      );
-
-      r.run(
+      ).run(
         url: Uri.parse('about:blank'),
         callbackUrlScheme: 'myapp',
       );
@@ -820,13 +816,7 @@ void main() {
     });
 
     test('platformOptions override defaultWebOptions', () {
-      final r = RedirectWeb(
-        defaultWebOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.popup, // <-- default says popup
-        ),
-      );
-
-      r.run(
+      RedirectWeb().run(
         url: Uri.parse('about:blank'),
         callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
@@ -979,9 +969,7 @@ void _cleanupStorage() {
       keysToRemove.add(key);
     }
   }
-  for (final key in keysToRemove) {
-    web.window.localStorage.removeItem(key);
-  }
+  keysToRemove.forEach(web.window.localStorage.removeItem);
 
   web.window.sessionStorage
     ..removeItem('redirect_pending')

@@ -1,4 +1,6 @@
+// avoid_print: These integration tests use print for debugging output.
 // ignore_for_file: avoid_print
+
 // Cross-platform integration tests for the redirect Flutter example app.
 //
 // These tests run on Android, iOS, Windows, Linux, and macOS — any platform
@@ -13,16 +15,15 @@
 //     --driver=test_driver/integration_test.dart \
 //     --target=integration_test/redirect_platform_test.dart \
 //     -d <device>
-library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:redirect/redirect.dart';
+import 'package:redirect_example/main.dart' as app;
 import 'package:redirect_platform_interface/redirect_platform_interface.dart'
     show RedirectPlatform;
-import 'package:redirect_example/main.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

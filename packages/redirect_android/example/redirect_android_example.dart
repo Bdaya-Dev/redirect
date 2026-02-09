@@ -1,3 +1,6 @@
+// comment_references: Doc comments reference types from the redirect package.
+// ignore_for_file: comment_references
+
 /// Example demonstrating redirect_android usage.
 ///
 /// This is the Android implementation of the redirect plugin.

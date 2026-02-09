@@ -1,3 +1,6 @@
+// Pigeon-generated interface uses pigeonVar_ naming.
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:redirect_darwin/redirect_darwin.dart';

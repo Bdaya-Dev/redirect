@@ -31,8 +31,8 @@ class RunRequest {
     required this.url,
     required this.callbackUrlScheme,
     required this.preferEphemeral,
-    this.timeoutMillis,
     required this.androidOptions,
+    this.timeoutMillis,
   });
 
   final String url;
