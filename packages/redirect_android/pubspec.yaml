@@ -12,6 +12,7 @@ resolution: workspace
 
 environment:
   sdk: ^3.10.0
+  flutter: ">=3.38.0"
 
 flutter:
   plugin:
