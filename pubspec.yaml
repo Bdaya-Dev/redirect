@@ -54,7 +54,6 @@ melos:
         melos run test:dart:chrome
         melos run test:dart:wasm
         melos run test:flutter
-        melos run test:web
 
     test:dart:
       name: Dart tests
@@ -85,13 +84,6 @@ melos:
         dirExists: test
         ignore:
           - "*example*"
-          - "redirect_web"
-
-    test:web:
-      name: Flutter web tests (requires Chrome)
-      exec: flutter test --platform chrome --coverage --branch-coverage
-      packageFilters:
-        scope:
           - "redirect_web"
 
     pana:

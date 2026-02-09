@@ -7,6 +7,8 @@
 // Run with:
 //   cd packages/redirect_web_core
 //   dart test -p chrome test/integration/redirect_web_integration_test.dart
+// ignore_for_file: avoid_function_literals_in_foreach_calls
+
 @TestOn('browser')
 library;
 
@@ -969,7 +971,7 @@ void _cleanupStorage() {
       keysToRemove.add(key);
     }
   }
-  keysToRemove.forEach(web.window.localStorage.removeItem);
+  keysToRemove.forEach((k) => web.window.localStorage.removeItem(k));
 
   web.window.sessionStorage
     ..removeItem('redirect_pending')

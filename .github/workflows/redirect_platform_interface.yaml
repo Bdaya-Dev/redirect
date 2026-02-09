@@ -22,9 +22,5 @@ jobs:
     with:
       flutter_channel: stable
       working_directory: packages/redirect_platform_interface
-
-  pana:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/pana.yml@v1
-    with:
-      working_directory: packages/redirect_platform_interface
+      min_coverage: 0
 

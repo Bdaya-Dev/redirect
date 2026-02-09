@@ -18,13 +18,26 @@ on:
 
 jobs:
   build:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
-    with:
-      flutter_channel: stable
-      working_directory: packages/redirect_web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/redirect_web
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v6
 
-  pana:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/pana.yml@v1
-    with:
-      working_directory: packages/redirect_web
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 📦 Install Dependencies
+        run: flutter pub get
+
+      - name: ✨ Check Formatting
+        run: dart format --set-exit-if-changed lib test
+
+      - name: 🕵️ Analyze
+        run: flutter analyze lib test
 

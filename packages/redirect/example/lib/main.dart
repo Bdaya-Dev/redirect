@@ -216,11 +216,12 @@ class _HomePageState extends State<HomePage> {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Test Redirect Flow',
-                  style: Theme.of(context).textTheme.titleMedium,
+                Expanded(
+                  child: Text(
+                    'Test Redirect Flow',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
-                const Spacer(),
                 TextButton.icon(
                   onPressed: () {
                     _urlController.text = _buildTestRedirectUrl();
@@ -281,8 +282,8 @@ class _HomePageState extends State<HomePage> {
             ListTile(
               title: const Text('Timeout'),
               subtitle: Text('$_timeoutSeconds seconds'),
-              trailing: SizedBox(
-                width: 200,
+              trailing: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 200),
                 child: Slider(
                   value: _timeoutSeconds.toDouble(),
                   min: 10,

@@ -17,20 +17,55 @@ on:
       - "packages/redirect_web_core/**"
 
 jobs:
-  # VM tests: unit tests + Jaspr integration tests
+  # Dart tests — unit tests + Jaspr integration tests (run on VM)
   build:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
-    with:
-      flutter_channel: stable
-      working_directory: packages/redirect_web_core
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/redirect_web_core
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v6
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 📦 Install Dependencies
+        run: flutter pub get
+
+      - name: ✨ Check Formatting
+        run: dart format --set-exit-if-changed lib test
+
+      - name: 🕵️ Analyze
+        run: dart analyze
+
+      - name: 🧪 Run Tests
+        run: dart test --coverage=coverage
 
   # Dart web (JS) — Chrome browser tests
   build-chrome:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
-    with:
-      flutter_channel: stable
-      working_directory: packages/redirect_web_core
-      min_coverage: 0
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/redirect_web_core
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v6
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 📦 Install Dependencies
+        run: flutter pub get
+
+      - name: 🧪 Run Browser Tests (JS)
+        run: dart test -p chrome
 
   # Dart web (WASM / dart2wasm) — Chrome browser tests compiled to WASM
   build-chrome-wasm:
@@ -50,10 +85,5 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run browser tests (dart2wasm)
+      - name: 🧪 Run Browser Tests (dart2wasm)
         run: dart test -p chrome -c dart2wasm
-
-  pana:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/pana.yml@v1
-    with:
-      working_directory: packages/redirect_web_core

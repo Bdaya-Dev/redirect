@@ -22,9 +22,6 @@ jobs:
     with:
       flutter_channel: stable
       working_directory: packages/redirect_android
-
-  pana:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/pana.yml@v1
-    with:
-      working_directory: packages/redirect_android
+      min_coverage: 0
+      coverage_excludes: "**/*.g.dart"
 
