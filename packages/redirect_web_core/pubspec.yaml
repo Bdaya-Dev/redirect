@@ -1,15 +1,16 @@
 name: redirect_web_core
-description: >
+description: >-
   Pure Dart web implementation of redirect-based flows.
-  Supports popups, new tabs, same-tab redirects, and iframes.
-  No Flutter dependency - works with any Dart web framework.
+  Supports popups, new tabs, same-tab redirects, and hidden iframes.
+  No Flutter dependency — works with any Dart web framework.
 version: 0.1.0
-repository: https://github.com/Bdaya-Dev/redirect
-issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+repository: https://github.com/Bdaya-Dev/redirect/tree/main/packages/redirect_web_core
 topics:
   - redirect
   - web
   - dart
+  - deep-links
+  - callback
 resolution: workspace
 
 environment:

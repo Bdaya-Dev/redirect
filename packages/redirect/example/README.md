@@ -1,6 +1,12 @@
+<p align="center">
+  <a href="https://github.com/Bdaya-Dev/redirect">
+    <img src="https://raw.githubusercontent.com/Bdaya-Dev/redirect/main/logo.svg" alt="redirect logo" width="64" height="64">
+  </a>
+</p>
+
 # redirect_example
 
-Demonstrates how to use the redirect plugin for redirect-based flows.
+Demonstrates how to use the [`redirect`](https://pub.dev/packages/redirect) plugin for redirect-based flows across all supported platforms.
 
 ## Running the Example
 

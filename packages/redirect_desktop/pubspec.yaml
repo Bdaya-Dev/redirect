@@ -1,15 +1,15 @@
 name: redirect_desktop
-description: >
+description: >-
   Desktop implementation of the redirect plugin using pure Dart.
-  Uses a loopback HTTP server to handle OAuth/redirect callbacks.
+  Uses a loopback HTTP server (RFC 8252) to handle redirect callbacks.
 version: 0.1.0
-repository: https://github.com/Bdaya-Dev/redirect
-issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+repository: https://github.com/Bdaya-Dev/redirect/tree/main/packages/redirect_desktop
 topics:
   - redirect
   - desktop
   - linux
   - windows
+  - deep-links
 resolution: workspace
 
 environment:

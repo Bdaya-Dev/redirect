@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d1b2a"/>
+      <stop offset="1" stop-color="#1b2e3c"/>
+    </linearGradient>
+    <linearGradient id="logo-bg" x1="0" y1="0" x2="160" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1565C0"/>
+      <stop offset="1" stop-color="#00897B"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1280" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1565C0"/>
+      <stop offset="1" stop-color="#00897B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Subtle accent line at top -->
+  <rect x="0" y="0" width="1280" height="4" fill="url(#accent)"/>
+
+  <!-- Logo (scaled and centered above text) -->
+  <g transform="translate(560, 120)">
+    <rect width="160" height="160" rx="30" fill="url(#logo-bg)"/>
+    <!-- Faded ghost -->
+    <line x1="85" y1="103" x2="125" y2="103"
+          stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.15"/>
+    <!-- Main redirect arrow -->
+    <polyline points="35,103 85,103 85,68"
+              stroke="#ffffff" stroke-width="12.5" stroke-linecap="round"
+              stroke-linejoin="round" fill="none"/>
+    <!-- Arrowhead -->
+    <polyline points="70,82 85,55 100,82"
+              stroke="#ffffff" stroke-width="12.5" stroke-linecap="round"
+              stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Package name -->
+  <text x="640" y="350" text-anchor="middle"
+        font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+        font-size="72" font-weight="700" fill="#ffffff" letter-spacing="-1">
+    redirect
+  </text>
+
+  <!-- Tagline -->
+  <text x="640" y="410" text-anchor="middle"
+        font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+        font-size="24" font-weight="400" fill="#94a3b8">
+    Cross-platform Dart &amp; Flutter plugin for redirect-based flows
+  </text>
+
+  <!-- Platform badges -->
+  <g transform="translate(640, 470)" text-anchor="middle"
+     font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+     font-size="16" font-weight="500" fill="#64748b">
+    <text x="-300" y="0">Android</text>
+    <text x="-195" y="0">iOS</text>
+    <text x="-110" y="0">macOS</text>
+    <text x="-10" y="0">Linux</text>
+    <text x="85" y="0">Windows</text>
+    <text x="195" y="0">Web</text>
+    <text x="285" y="0">CLI</text>
+  </g>
+
+  <!-- Dots between platforms -->
+  <g fill="#475569">
+    <circle cx="393" cy="466" r="2"/>
+    <circle cx="488" cy="466" r="2"/>
+    <circle cx="578" cy="466" r="2"/>
+    <circle cx="678" cy="466" r="2"/>
+    <circle cx="780" cy="466" r="2"/>
+    <circle cx="880" cy="466" r="2"/>
+  </g>
+
+  <!-- GitHub org -->
+  <text x="640" y="560" text-anchor="middle"
+        font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+        font-size="18" font-weight="400" fill="#475569">
+    github.com/Bdaya-Dev/redirect
+  </text>
+</svg>

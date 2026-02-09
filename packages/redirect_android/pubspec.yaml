@@ -1,12 +1,15 @@
 name: redirect_android
-description: Android implementation of the redirect plugin
+description: >-
+  Android implementation of the redirect plugin.
+  Uses Chrome Custom Tabs for secure redirect-based flows.
 version: 0.1.0+1
-repository: https://github.com/Bdaya-Dev/redirect
-issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+repository: https://github.com/Bdaya-Dev/redirect/tree/main/packages/redirect_android
 topics:
   - redirect
   - android
   - flutter-plugin
+  - deep-links
+  - callback
 
 resolution: workspace
 
