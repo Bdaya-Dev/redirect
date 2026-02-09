@@ -45,7 +45,7 @@ jobs:
   build:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
     with:
-      flutter_version: 3.35.0
+      flutter_version: 3.38.0
       working_directory: packages/redirect
 
   pana:
@@ -74,7 +74,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.35.0
+          flutter-version: 3.38.0
           channel: stable
           cache: true
 
@@ -134,7 +134,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.35.0
+          flutter-version: 3.38.0
           channel: stable
           cache: true
 
@@ -169,7 +169,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.35.0
+          flutter-version: 3.38.0
           channel: stable
           cache: true
 
@@ -197,7 +197,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.35.0
+          flutter-version: 3.38.0
           channel: stable
           cache: true
 
@@ -232,7 +232,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.35.0
+          flutter-version: 3.38.0
           channel: stable
           cache: true
 
@@ -258,7 +258,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.35.0
+          flutter-version: 3.38.0
           channel: stable
           cache: true
 
@@ -286,7 +286,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.35.0
+          flutter-version: 3.38.0
           channel: stable
           cache: true
 
@@ -322,7 +322,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.35.0
+          flutter-version: 3.38.0
           channel: stable
           cache: true
 

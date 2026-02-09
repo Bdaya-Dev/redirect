@@ -5,12 +5,16 @@ description: >
 version: 0.1.0
 repository: https://github.com/Bdaya-Dev/redirect
 issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
-
+topics:
+  - redirect
+  - ios
+  - macos
+  - flutter-plugin
 resolution: workspace
 
 environment:
-  sdk: ^3.9.0
-  flutter: ">=3.7.0"
+  sdk: ^3.10.0
+  flutter: ">=3.38.0"
 
 flutter:
   plugin:
@@ -34,4 +38,4 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   pigeon: ^26.1.7
-  very_good_analysis: ^10.0.0
+  very_good_analysis: ^10.1.0

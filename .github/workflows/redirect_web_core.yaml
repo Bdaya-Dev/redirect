@@ -19,18 +19,17 @@ on:
 jobs:
   # VM tests: unit tests + Jaspr integration tests
   build:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
     with:
-      dart_sdk: stable
+      flutter_version: 3.38.0
       working_directory: packages/redirect_web_core
 
   # Dart web (JS) — Chrome browser tests
   build-chrome:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
     with:
-      dart_sdk: stable
+      flutter_version: 3.38.0
       working_directory: packages/redirect_web_core
-      platform: chrome
       min_coverage: 0
 
   # Dart web (WASM / dart2wasm) — Chrome browser tests compiled to WASM
@@ -44,12 +43,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
         with:
-          sdk: stable
+          flutter-version: 3.38.0
+          channel: stable
 
       - name: Install dependencies
-        run: dart pub get
+        run: flutter pub get
 
       - name: Run browser tests (dart2wasm)
         run: dart test -p chrome -c dart2wasm

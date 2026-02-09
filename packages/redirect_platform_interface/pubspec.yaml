@@ -1,11 +1,16 @@
 name: redirect_platform_interface
 description: A common platform interface for the redirect plugin.
 version: 0.1.0+1
+repository: https://github.com/Bdaya-Dev/redirect
+issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+topics:
+  - redirect
+  - platform-interface
 
 resolution: workspace
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.10.0
 
 dependencies:
   flutter:
@@ -16,4 +21,4 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  very_good_analysis: ^10.0.0
+  very_good_analysis: ^10.1.0

@@ -3,11 +3,16 @@ description: >
   Flutter web implementation of the redirect plugin.
   Wraps redirect_web_core for Flutter plugin registration.
 version: 0.1.0+1
-
+repository: https://github.com/Bdaya-Dev/redirect
+issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+topics:
+  - redirect
+  - web
+  - flutter-plugin
 resolution: workspace
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.10.0
 
 flutter:
   plugin:
@@ -28,4 +33,4 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  very_good_analysis: ^10.0.0
+  very_good_analysis: ^10.1.0

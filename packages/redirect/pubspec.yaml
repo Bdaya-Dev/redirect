@@ -1,11 +1,18 @@
 name: redirect
 description: A Flutter plugin to facilitate redirect-based flows, e.g. OIDC authorization code grant or URL-based payment gateways
 version: 0.1.0+1
+repository: https://github.com/Bdaya-Dev/redirect
+issue_tracker: https://github.com/Bdaya-Dev/redirect/issues
+topics:
+  - redirect
+  - oauth
+  - deep-links
+  - url-launcher
 
 resolution: workspace
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.10.0
 
 flutter:
   plugin:
@@ -37,4 +44,4 @@ dev_dependencies:
     sdk: flutter
   mocktail: ^1.0.4
   plugin_platform_interface: ^2.1.8
-  very_good_analysis: ^10.0.0
+  very_good_analysis: ^10.1.0
