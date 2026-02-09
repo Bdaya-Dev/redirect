@@ -16,9 +16,12 @@
   ],
   "useGitignore": true,
   "words": [
+    "Bdaya",
+    "BROWSABLE",
+    "dartdoc",
     "fluttium",
-    "myapp",
     "gifs",
-    "Jaspr"
+    "Jaspr",
+    "myapp"
   ]
 }
