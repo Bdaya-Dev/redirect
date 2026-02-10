@@ -17,6 +17,7 @@ class FakeRedirectHostApi implements RedirectHostApi {
 
   RunRequest? lastRunRequest;
   bool cancelCalled = false;
+  String? lastCancelledNonce;
 
   String? runResult = 'myapp://callback?code=abc123';
   PlatformException? runException;
@@ -29,47 +30,66 @@ class FakeRedirectHostApi implements RedirectHostApi {
   }
 
   @override
-  Future<void> cancel() async {
+  Future<void> cancel(String nonce) async {
     cancelCalled = true;
+    lastCancelledNonce = nonce;
   }
 }
+
+/// Default options to use in tests.
+const _defaultIosOptions = RedirectOptions(
+  platformOptions: {
+    IosRedirectOptions.key: IosRedirectOptions(
+      callback: CallbackConfig.customScheme('myapp'),
+    ),
+  },
+);
+
+const _defaultMacosOptions = RedirectOptions(
+  platformOptions: {
+    MacosRedirectOptions.key: MacosRedirectOptions(
+      callback: CallbackConfig.customScheme('myapp'),
+    ),
+  },
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('RedirectDarwinPlugin', () {
-    late RedirectDarwinPlugin redirect;
+  group('RedirectIosPlugin', () {
+    late RedirectIosPlugin redirect;
     late FakeRedirectHostApi fakeApi;
 
     setUp(() {
       fakeApi = FakeRedirectHostApi();
-      redirect = RedirectDarwinPlugin(api: fakeApi);
+      redirect = RedirectIosPlugin(api: fakeApi);
     });
 
     test('can be registered', () {
-      RedirectDarwinPlugin.registerWith();
-      expect(RedirectPlatform.instance, isA<RedirectDarwinPlugin>());
+      RedirectIosPlugin.registerWith();
+      expect(RedirectPlatform.instance, isA<RedirectIosPlugin>());
     });
 
     test('run sends correct request arguments', () async {
       final url = Uri.parse('https://auth.example.com/authorize');
       final handle = redirect.run(
         url: url,
-        callbackUrlScheme: 'myapp',
+        options: _defaultIosOptions,
       );
       await handle.result;
 
       final req = fakeApi.lastRunRequest!;
+      expect(req.nonce, equals(handle.nonce));
       expect(req.url, equals(url.toString()));
-      expect(req.callbackUrlScheme, equals('myapp'));
+      expect(req.callback.type, equals(CallbackType.customScheme));
+      expect(req.callback.scheme, equals('myapp'));
       expect(req.preferEphemeral, isFalse);
     });
 
     test('run passes preferEphemeral option', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(preferEphemeral: true),
+        options: _defaultIosOptions.copyWith(preferEphemeral: true),
       );
       await handle.result;
 
@@ -79,8 +99,9 @@ void main() {
     test('run passes timeout option', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(timeout: Duration(seconds: 30)),
+        options: _defaultIosOptions.copyWith(
+          timeout: const Duration(seconds: 30),
+        ),
       );
       await handle.result;
 
@@ -90,7 +111,7 @@ void main() {
     test('run returns RedirectSuccess on valid result', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: _defaultIosOptions,
       );
       final result = await handle.result;
 
@@ -106,7 +127,7 @@ void main() {
 
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: _defaultIosOptions,
       );
       final result = await handle.result;
 
@@ -120,7 +141,7 @@ void main() {
 
         final handle = redirect.run(
           url: Uri.parse('https://auth.example.com/authorize'),
-          callbackUrlScheme: 'myapp',
+          options: _defaultIosOptions,
         );
         final result = await handle.result;
 
@@ -136,7 +157,7 @@ void main() {
 
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: _defaultIosOptions,
       );
       final result = await handle.result;
 
@@ -147,10 +168,50 @@ void main() {
       );
     });
 
+    test('cancel calls the api with correct nonce', () async {
+      final handle = redirect.run(
+        url: Uri.parse('https://auth.example.com/authorize'),
+        options: _defaultIosOptions,
+      );
+      await handle.cancel();
+
+      expect(fakeApi.cancelCalled, isTrue);
+      expect(fakeApi.lastCancelledNonce, equals(handle.nonce));
+    });
+  });
+
+  group('RedirectMacosPlugin', () {
+    late RedirectMacosPlugin redirect;
+    late FakeRedirectHostApi fakeApi;
+
+    setUp(() {
+      fakeApi = FakeRedirectHostApi();
+      redirect = RedirectMacosPlugin(api: fakeApi);
+    });
+
+    test('can be registered', () {
+      RedirectMacosPlugin.registerWith();
+      expect(RedirectPlatform.instance, isA<RedirectMacosPlugin>());
+    });
+
+    test('run returns RedirectSuccess on valid result', () async {
+      final handle = redirect.run(
+        url: Uri.parse('https://auth.example.com/authorize'),
+        options: _defaultMacosOptions,
+      );
+      final result = await handle.result;
+
+      expect(result, isA<RedirectSuccess>());
+      expect(
+        (result as RedirectSuccess).uri,
+        equals(Uri.parse('myapp://callback?code=abc123')),
+      );
+    });
+
     test('cancel calls the api', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: _defaultMacosOptions,
       );
       await handle.cancel();
 

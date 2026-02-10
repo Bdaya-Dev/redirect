@@ -10,7 +10,6 @@
 ///
 /// final result = await runRedirect(
 ///   url: Uri.parse('https://example.com/authorize'),
-///   callbackUrlScheme: 'myapp',
 /// );
 ///
 /// switch (result) {
@@ -29,8 +28,13 @@ import 'package:redirect_platform_interface/redirect_platform_interface.dart';
 export 'package:redirect_platform_interface/redirect_platform_interface.dart'
     show
         AndroidRedirectOptions,
+        CallbackConfig,
+        CustomSchemeCallbackConfig,
         DarwinRedirectOptions,
-        DesktopRedirectOptions,
+        HttpsCallbackConfig,
+        IosRedirectOptions,
+        LinuxRedirectOptions,
+        MacosRedirectOptions,
         RedirectCancelled,
         RedirectFailure,
         RedirectHandle,
@@ -39,13 +43,24 @@ export 'package:redirect_platform_interface/redirect_platform_interface.dart'
         RedirectPending,
         RedirectResult,
         RedirectSuccess,
+        WebCallbackValidator,
         WebRedirectMode,
-        WebRedirectOptions;
+        WebRedirectOptions,
+        WindowsRedirectOptions;
 
-/// Opens [url] and waits for a redirect matching [callbackUrlScheme].
+/// Opens [url] and waits for a redirect callback.
 ///
 /// Returns a [RedirectHandle] synchronously. On web, the browser window
 /// is pre-opened in the current call stack to avoid popup blockers.
+///
+/// Callback matching is configured per-platform via [options]:
+/// - **iOS/macOS**: Use `IosRedirectOptions` / `MacosRedirectOptions` with
+///   a [CallbackConfig] (custom scheme or HTTPS host+path).
+/// - **Android**: Use `AndroidRedirectOptions` with `callbackUrlScheme`
+///   matching the manifest intent filter.
+/// - **Web**: Use `WebRedirectOptions` with an optional `callbackValidator`.
+/// - **Desktop/IO**: Use `WindowsRedirectOptions` / `LinuxRedirectOptions`
+///   with an optional `callbackValidator`.
 ///
 /// This is a convenience function that delegates to
 /// [RedirectPlatform.instance].
@@ -53,12 +68,10 @@ export 'package:redirect_platform_interface/redirect_platform_interface.dart'
 /// See [RedirectPlatform.run] for details.
 RedirectHandle runRedirect({
   required Uri url,
-  required String callbackUrlScheme,
   RedirectOptions options = const RedirectOptions(),
 }) {
   return RedirectPlatform.instance.run(
     url: url,
-    callbackUrlScheme: callbackUrlScheme,
     options: options,
   );
 }

@@ -20,7 +20,6 @@ void main() {
       expect(
         () => mock.run(
           url: Uri.parse('https://example.com'),
-          callbackUrlScheme: 'myapp',
         ),
         throwsA(isA<UnimplementedError>()),
       );

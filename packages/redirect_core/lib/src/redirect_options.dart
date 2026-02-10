@@ -48,7 +48,6 @@ class RedirectOptions {
   ///
   /// runRedirect(
   ///   url: authUrl,
-  ///   callbackUrlScheme: 'myapp',
   ///   options: RedirectOptions(
   ///     platformOptions: {
   ///       WebRedirectOptions.key: WebRedirectOptions(

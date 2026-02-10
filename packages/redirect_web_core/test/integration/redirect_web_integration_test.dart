@@ -24,8 +24,21 @@ import 'package:web/web.dart' as web;
 void main() {
   late RedirectWeb redirect;
 
+  /// Helper to create [RedirectOptions] with embedded [WebRedirectOptions].
+  RedirectOptions webOpts(
+    WebRedirectOptions web, {
+    Duration? timeout,
+    bool preferEphemeral = false,
+  }) {
+    return RedirectOptions(
+      timeout: timeout,
+      preferEphemeral: preferEphemeral,
+      platformOptions: {WebRedirectOptions.key: web},
+    );
+  }
+
   setUp(() {
-    redirect = RedirectWeb();
+    redirect = const RedirectWeb();
     _cleanupStorage();
     _cleanupIframes();
   });
@@ -43,12 +56,13 @@ void main() {
     test('completes with RedirectSuccess when callback is broadcast', () async {
       const channelName = 'test_iframe_success';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
         ),
       );
 
@@ -72,13 +86,14 @@ void main() {
     test('creates a hidden iframe in the DOM', () {
       const channelName = 'test_iframe_dom';
 
-      redirect.runWithWebOptions(
+      redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
-          iframeId: 'test_iframe_element',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+            iframeId: 'test_iframe_element',
+          ),
         ),
       );
 
@@ -95,13 +110,14 @@ void main() {
       const channelName = 'test_iframe_custom_id';
       const customId = 'my_custom_iframe_id';
 
-      redirect.runWithWebOptions(
+      redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
-          iframeId: customId,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+            iframeId: customId,
+          ),
         ),
       );
 
@@ -111,12 +127,13 @@ void main() {
     test('uses default iframe ID when not specified', () {
       const channelName = 'test_iframe_default_id';
 
-      redirect.runWithWebOptions(
+      redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
         ),
       );
 
@@ -128,13 +145,14 @@ void main() {
       const channelName = 'test_iframe_cleanup';
       const iframeId = 'test_iframe_cleanup_elem';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
-          iframeId: iframeId,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+            iframeId: iframeId,
+          ),
         ),
       );
 
@@ -158,13 +176,14 @@ void main() {
       const channelName = 'test_iframe_cancel';
       const iframeId = 'test_iframe_cancel_elem';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
-          iframeId: iframeId,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+            iframeId: iframeId,
+          ),
         ),
       );
 
@@ -182,15 +201,14 @@ void main() {
     test('timeout completes with RedirectCancelled', () async {
       const channelName = 'test_iframe_timeout';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(
-          timeout: Duration(milliseconds: 200),
-        ),
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
+          timeout: const Duration(milliseconds: 200),
         ),
       );
 
@@ -201,15 +219,14 @@ void main() {
     test('ignores messages with wrong scheme', () async {
       const channelName = 'test_iframe_wrong_scheme';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(
-          timeout: Duration(milliseconds: 500),
-        ),
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
+          timeout: const Duration(milliseconds: 500),
         ),
       );
 
@@ -228,15 +245,14 @@ void main() {
     test('ignores malformed messages', () async {
       const channelName = 'test_iframe_malformed';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(
-          timeout: Duration(milliseconds: 500),
-        ),
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
+          timeout: const Duration(milliseconds: 500),
         ),
       );
 
@@ -257,13 +273,14 @@ void main() {
       const iframeId = 'test_iframe_src_elem';
       final url = Uri.parse('https://example.com/authorize?client_id=abc');
 
-      redirect.runWithWebOptions(
+      redirect.run(
         url: url,
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
-          iframeId: iframeId,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+            iframeId: iframeId,
+          ),
         ),
       );
 
@@ -282,23 +299,25 @@ void main() {
       const channel1 = 'test_concurrent_1';
       const channel2 = 'test_concurrent_2';
 
-      final handle1 = redirect.runWithWebOptions(
+      final handle1 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channel1,
-          iframeId: 'concurrent_iframe_1',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channel1,
+            iframeId: 'concurrent_iframe_1',
+          ),
         ),
       );
 
-      final handle2 = redirect.runWithWebOptions(
+      final handle2 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channel2,
-          iframeId: 'concurrent_iframe_2',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channel2,
+            iframeId: 'concurrent_iframe_2',
+          ),
         ),
       );
 
@@ -327,23 +346,25 @@ void main() {
       const channel2 = 'test_multi_scheme_2';
 
       // Use lowercase schemes — Dart's Uri.parse lowercases schemes.
-      final handle1 = redirect.runWithWebOptions(
+      final handle1 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'schemea',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channel1,
-          iframeId: 'multi_scheme_iframe_1',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channel1,
+            iframeId: 'multi_scheme_iframe_1',
+          ),
         ),
       );
 
-      final handle2 = redirect.runWithWebOptions(
+      final handle2 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'schemeb',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channel2,
-          iframeId: 'multi_scheme_iframe_2',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channel2,
+            iframeId: 'multi_scheme_iframe_2',
+          ),
         ),
       );
 
@@ -377,31 +398,34 @@ void main() {
       const ch2 = 'test_triple_2';
       const ch3 = 'test_triple_3';
 
-      final h1 = redirect.runWithWebOptions(
+      final h1 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch1,
-          iframeId: 'triple_iframe_1',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch1,
+            iframeId: 'triple_iframe_1',
+          ),
         ),
       );
-      final h2 = redirect.runWithWebOptions(
+      final h2 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch2,
-          iframeId: 'triple_iframe_2',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch2,
+            iframeId: 'triple_iframe_2',
+          ),
         ),
       );
-      final h3 = redirect.runWithWebOptions(
+      final h3 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch3,
-          iframeId: 'triple_iframe_3',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch3,
+            iframeId: 'triple_iframe_3',
+          ),
         ),
       );
 
@@ -437,22 +461,24 @@ void main() {
       const ch1 = 'test_cancel_sibling_1';
       const ch2 = 'test_cancel_sibling_2';
 
-      final h1 = redirect.runWithWebOptions(
+      final h1 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch1,
-          iframeId: 'cancel_sibling_iframe_1',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch1,
+            iframeId: 'cancel_sibling_iframe_1',
+          ),
         ),
       );
-      final h2 = redirect.runWithWebOptions(
+      final h2 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch2,
-          iframeId: 'cancel_sibling_iframe_2',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch2,
+            iframeId: 'cancel_sibling_iframe_2',
+          ),
         ),
       );
 
@@ -477,10 +503,9 @@ void main() {
     });
 
     test('handles with auto-generated channel names are isolated', () async {
-      // Use run() (not runWithWebOptions) to test auto channel generation.
+      // Use run() with platformOptions to test auto channel generation.
       final h1 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           timeout: Duration(milliseconds: 500),
           platformOptions: {
@@ -494,7 +519,6 @@ void main() {
 
       final h2 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           timeout: Duration(milliseconds: 500),
           platformOptions: {
@@ -523,19 +547,18 @@ void main() {
       const channelName = 'test_popup_meta';
       final url = Uri.parse('https://example.com/auth?client_id=test');
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: url,
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(
-          timeout: Duration(seconds: 5),
-        ),
-        webOptions: const WebRedirectOptions(
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            broadcastChannelName: channelName,
+          ),
+          timeout: const Duration(seconds: 5),
         ),
       );
 
       expect(handle.url, equals(url));
-      expect(handle.callbackUrlScheme, equals('myapp'));
+      expect(handle.nonce, isNotEmpty);
 
       // In headless test, the popup may be blocked → RedirectFailure,
       // or it may open but close-watcher events don't fire → times out.
@@ -551,14 +574,13 @@ void main() {
       // Use about:blank — less likely to be blocked
       const channelName = 'test_popup_bc_success';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(
-          timeout: Duration(seconds: 5),
-        ),
-        webOptions: const WebRedirectOptions(
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            broadcastChannelName: channelName,
+          ),
+          timeout: const Duration(seconds: 5),
         ),
       );
 
@@ -597,20 +619,19 @@ void main() {
       const channelName = 'test_newtab_meta';
       final url = Uri.parse('https://example.com/pay');
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: url,
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(
-          timeout: Duration(seconds: 5),
-        ),
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.newTab,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.newTab,
+            broadcastChannelName: channelName,
+          ),
+          timeout: const Duration(seconds: 5),
         ),
       );
 
       expect(handle.url, equals(url));
-      expect(handle.callbackUrlScheme, equals('myapp'));
+      expect(handle.nonce, isNotEmpty);
 
       final result = await handle.result;
       expect(
@@ -622,15 +643,14 @@ void main() {
     test('succeeds via BroadcastChannel when tab opens', () async {
       const channelName = 'test_newtab_bc_success';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(
-          timeout: Duration(seconds: 5),
-        ),
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.newTab,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.newTab,
+            broadcastChannelName: channelName,
+          ),
+          timeout: const Duration(seconds: 5),
         ),
       );
 
@@ -834,12 +854,13 @@ void main() {
     test('run() registers channel in localStorage', () async {
       const channelName = 'test_registry_reg';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'testscheme',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
         ),
       );
 
@@ -856,12 +877,13 @@ void main() {
     test('cleanup unregisters channel from localStorage', () async {
       const channelName = 'test_registry_unreg';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'cleanscheme',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
         ),
       );
 
@@ -882,23 +904,25 @@ void main() {
       const ch1 = 'test_registry_multi_1';
       const ch2 = 'test_registry_multi_2';
 
-      final handle1 = redirect.runWithWebOptions(
+      final handle1 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'shared',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch1,
-          iframeId: 'reg_multi_1',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch1,
+            iframeId: 'reg_multi_1',
+          ),
         ),
       );
 
-      final handle2 = redirect.runWithWebOptions(
+      final handle2 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'shared',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch2,
-          iframeId: 'reg_multi_2',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch2,
+            iframeId: 'reg_multi_2',
+          ),
         ),
       );
 
@@ -926,7 +950,6 @@ void main() {
     test('run() uses platformOptions for web config', () {
       redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
@@ -954,17 +977,18 @@ void main() {
       const channelName = 'test_handle_params';
       final url = Uri.parse('https://example.com/auth?scope=openid');
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: url,
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
         ),
       );
 
       expect(handle.url, equals(url));
-      expect(handle.callbackUrlScheme, equals('myapp'));
+      expect(handle.nonce, isNotEmpty);
 
       await handle.cancel();
     });
@@ -972,12 +996,13 @@ void main() {
     test('cancel is idempotent', () async {
       const channelName = 'test_handle_idempotent';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
         ),
       );
 
@@ -1077,25 +1102,25 @@ void main() {
       const ch2 = 'test_isolated_hcb_2';
 
       // Start two iframe handles
-      final h1 = redirect.runWithWebOptions(
+      final h1 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch1,
-          iframeId: 'isolated_hcb_iframe_1',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch1,
+            iframeId: 'isolated_hcb_iframe_1',
+          ),
         ),
       );
-      final h2 = redirect.runWithWebOptions(
+      final h2 = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(
-          timeout: Duration(milliseconds: 500),
-        ),
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: ch2,
-          iframeId: 'isolated_hcb_iframe_2',
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: ch2,
+            iframeId: 'isolated_hcb_iframe_2',
+          ),
+          timeout: const Duration(milliseconds: 500),
         ),
       );
 
@@ -1149,12 +1174,13 @@ void main() {
     test('handleCallback completes a pending iframe redirect', () async {
       const channelName = 'test_e2e_hcb';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
         ),
       );
 
@@ -1178,12 +1204,13 @@ void main() {
     test('handleCallback auto-discovers channels from localStorage', () async {
       const channelName = 'test_e2e_autodiscovery';
 
-      final handle = redirect.runWithWebOptions(
+      final handle = redirect.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-        webOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: channelName,
+        options: webOpts(
+          const WebRedirectOptions(
+            mode: WebRedirectMode.hiddenIframe,
+            broadcastChannelName: channelName,
+          ),
         ),
       );
 

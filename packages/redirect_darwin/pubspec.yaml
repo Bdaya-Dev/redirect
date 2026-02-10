@@ -22,11 +22,11 @@ flutter:
     platforms:
       ios:
         pluginClass: RedirectPlugin
-        dartPluginClass: RedirectDarwinPlugin
+        dartPluginClass: RedirectIosPlugin
         sharedDarwinSource: true
       macos:
         pluginClass: RedirectPlugin
-        dartPluginClass: RedirectDarwinPlugin
+        dartPluginClass: RedirectMacosPlugin
         sharedDarwinSource: true
 
 dependencies:

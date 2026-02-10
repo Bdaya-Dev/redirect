@@ -9,11 +9,17 @@ import FlutterMacOS
 import AppKit
 #endif
 
+/// Tracks state for a single in-flight redirect operation.
+private struct PendingRedirect {
+    let session: ASWebAuthenticationSession
+    let completion: (Result<String?, Error>) -> Void
+    var timeoutWorkItem: DispatchWorkItem?
+}
+
 public class RedirectPlugin: NSObject, FlutterPlugin, RedirectHostApi,
     ASWebAuthenticationPresentationContextProviding {
-    private var session: ASWebAuthenticationSession?
-    private var pendingCompletion: ((Result<String?, Error>) -> Void)?
-    private var timeoutWorkItem: DispatchWorkItem?
+    /// All in-flight redirects, keyed by nonce.
+    private var pendingRedirects: [String: PendingRedirect] = [:]
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         #if os(iOS)
@@ -29,8 +35,10 @@ public class RedirectPlugin: NSObject, FlutterPlugin, RedirectHostApi,
     // MARK: - RedirectHostApi (Pigeon)
     
     func run(request: RunRequest, completion: @escaping (Result<String?, Error>) -> Void) {
-        // Cancel any existing session
-        cancelInternal()
+        let nonce = request.nonce
+        
+        // If there's already a redirect with this nonce, cancel it first.
+        cancelByNonce(nonce)
         
         guard let url = URL(string: request.url) else {
             completion(.failure(PigeonError(
@@ -41,47 +49,53 @@ public class RedirectPlugin: NSObject, FlutterPlugin, RedirectHostApi,
             return
         }
         
-        pendingCompletion = completion
+        // Determine callback matching.
+        let callbackScheme: String
+        switch request.callback.type {
+        case .customScheme:
+            callbackScheme = request.callback.scheme ?? ""
+        case .https:
+            // ASWebAuthenticationSession on iOS 17.4+ supports HTTPS callbacks
+            // via .https(host:path:). For older OS, we fall back to using
+            // "https" as the callbackURLScheme which will match any https:// URL.
+            callbackScheme = "https"
+        }
         
-        session = ASWebAuthenticationSession(
+        let session = ASWebAuthenticationSession(
             url: url,
-            callbackURLScheme: request.callbackUrlScheme
+            callbackURLScheme: callbackScheme
         ) { [weak self] callbackURL, error in
             guard let self = self else { return }
             
-            // Cancel the timeout timer since the session completed
-            self.timeoutWorkItem?.cancel()
-            self.timeoutWorkItem = nil
+            guard var pending = self.pendingRedirects[nonce] else { return }
             
-            guard self.pendingCompletion != nil else { return }
+            // Cancel the timeout timer since the session completed
+            pending.timeoutWorkItem?.cancel()
+            self.pendingRedirects.removeValue(forKey: nonce)
             
             if let error = error {
                 if (error as NSError).code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
-                    self.pendingCompletion?(.success(nil)) // Cancelled
+                    pending.completion(.success(nil)) // Cancelled
                 } else {
-                    self.pendingCompletion?(.failure(PigeonError(
+                    pending.completion(.failure(PigeonError(
                         code: "AUTH_ERROR",
                         message: error.localizedDescription,
                         details: "\((error as NSError).code)"
                     )))
                 }
             } else if let callbackURL = callbackURL {
-                self.pendingCompletion?(.success(callbackURL.absoluteString))
+                pending.completion(.success(callbackURL.absoluteString))
             } else {
-                self.pendingCompletion?(.success(nil)) // Should not happen
+                pending.completion(.success(nil)) // Should not happen
             }
-            
-            self.pendingCompletion = nil
-            self.session = nil
         }
         
-        session?.prefersEphemeralWebBrowserSession = request.preferEphemeral
-        session?.presentationContextProvider = self
+        session.prefersEphemeralWebBrowserSession = request.preferEphemeral
+        session.presentationContextProvider = self
         
         // Set additional header fields if provided (iOS 17.4+ / macOS 14.4+)
         if let headers = request.additionalHeaderFields {
             if #available(iOS 17.4, macOS 14.4, *) {
-                // Filter out nil keys/values from Pigeon's [String?: String?]?
                 var validHeaders: [String: String] = [:]
                 for (key, value) in headers {
                     if let key = key, let value = value {
@@ -89,46 +103,56 @@ public class RedirectPlugin: NSObject, FlutterPlugin, RedirectHostApi,
                     }
                 }
                 if !validHeaders.isEmpty {
-                    session?.additionalHeaderFields = validHeaders
+                    session.additionalHeaderFields = validHeaders
                 }
             }
         }
         
+        var pending = PendingRedirect(
+            session: session,
+            completion: completion
+        )
+        
         // Schedule timeout if specified
         if let timeoutMillis = request.timeoutMillis {
             let workItem = DispatchWorkItem { [weak self] in
-                guard let self = self, self.pendingCompletion != nil else { return }
-                self.session?.cancel()
-                self.session = nil
-                self.pendingCompletion?(.success(nil)) // Treated as cancellation
-                self.pendingCompletion = nil
+                self?.cancelByNonce(nonce)
             }
-            timeoutWorkItem = workItem
+            pending.timeoutWorkItem = workItem
             DispatchQueue.main.asyncAfter(
                 deadline: .now() + .milliseconds(Int(timeoutMillis)),
                 execute: workItem
             )
         }
         
-        DispatchQueue.main.async { [weak self] in
-            self?.session?.start()
+        pendingRedirects[nonce] = pending
+        
+        DispatchQueue.main.async {
+            session.start()
         }
     }
     
-    func cancel() throws {
-        cancelInternal()
+    func cancel(nonce: String) throws {
+        if nonce.isEmpty {
+            cancelAll()
+        } else {
+            cancelByNonce(nonce)
+        }
     }
     
-    /// Shared cancellation logic used by both `cancel()` and `run()` (to
-    /// cancel a prior session before starting a new one).
-    private func cancelInternal() {
-        timeoutWorkItem?.cancel()
-        timeoutWorkItem = nil
-        session?.cancel()
-        session = nil
-        if let cb = pendingCompletion {
-            cb(.success(nil))
-            pendingCompletion = nil
+    /// Cancels a single redirect operation by nonce.
+    private func cancelByNonce(_ nonce: String) {
+        guard var pending = pendingRedirects.removeValue(forKey: nonce) else { return }
+        pending.timeoutWorkItem?.cancel()
+        pending.session.cancel()
+        pending.completion(.success(nil))
+    }
+    
+    /// Cancels all pending redirect operations.
+    private func cancelAll() {
+        let allNonces = Array(pendingRedirects.keys)
+        for nonce in allNonces {
+            cancelByNonce(nonce)
         }
     }
     
@@ -136,15 +160,12 @@ public class RedirectPlugin: NSObject, FlutterPlugin, RedirectHostApi,
     
     public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         #if os(iOS)
-        // Use the modern scene-based API (UIApplication.shared.windows is
-        // deprecated since iOS 15).
         if let windowScene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .first(where: { $0.activationState == .foregroundActive }),
            let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
             return window
         }
-        // Fallback for edge cases where no foreground scene is found yet.
         return UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }

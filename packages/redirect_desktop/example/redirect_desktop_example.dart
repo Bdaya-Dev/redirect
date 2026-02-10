@@ -19,7 +19,8 @@
 /// final result = await handle.result;
 /// ```
 ///
-/// For desktop-specific options, pass [DesktopRedirectOptions]:
+/// For platform-specific options, pass [WindowsRedirectOptions] or
+/// [LinuxRedirectOptions]:
 ///
 /// ```dart
 /// final handle = redirect.run(
@@ -27,11 +28,8 @@
 ///   callbackUrlScheme: 'http',
 ///   options: RedirectOptions(
 ///     platformOptions: {
-///       DesktopRedirectOptions.key: DesktopRedirectOptions(
-///         port: 8080,
-///         host: 'localhost',
-///         callbackPath: '/callback',
-///         successHtml: '<html><body>Success! You may close this tab.</body></html>',
+///       WindowsRedirectOptions.key: WindowsRedirectOptions(
+///         callbackUrl: Uri.parse('http://localhost:8080/callback'),
 ///       ),
 ///     },
 ///   ),

@@ -1,31 +1,32 @@
 import 'package:meta/meta.dart';
 import 'package:redirect_core/redirect_core.dart';
 
-/// Darwin (iOS/macOS) specific options for redirect-based flows.
-///
-/// Pass via [RedirectOptions.platformOptions] using [key].
+/// Base options shared by Darwin (iOS/macOS) redirect implementations.
 ///
 /// Uses `ASWebAuthenticationSession` under the hood.
+///
+/// Subclasses: `IosRedirectOptions`, `MacosRedirectOptions`.
 @immutable
 class DarwinRedirectOptions {
   /// Creates Darwin redirect options.
   const DarwinRedirectOptions({
+    required this.callback,
     this.additionalHeaderFields,
   });
 
-  /// The key used in [RedirectOptions.platformOptions].
-  static const String key = 'darwin';
-
-  /// Extracts [DarwinRedirectOptions] from [RedirectOptions.platformOptions].
+  /// How the platform should match callback URLs.
   ///
-  /// Returns [fallback] if no Darwin options are set (defaults to
-  /// `const DarwinRedirectOptions()`).
-  static DarwinRedirectOptions fromOptions(
-    RedirectOptions options, [
-    DarwinRedirectOptions fallback = const DarwinRedirectOptions(),
-  ]) {
-    return options.getPlatformOption<DarwinRedirectOptions>(key) ?? fallback;
-  }
+  /// Maps directly to `ASWebAuthenticationSession.Callback`:
+  /// - [CallbackConfig.customScheme] → `.customScheme(scheme)`
+  /// - [CallbackConfig.https] → `.https(host:path:)`
+  ///
+  /// Example:
+  /// ```dart
+  /// DarwinRedirectOptions(
+  ///   callback: CallbackConfig.customScheme('myapp'),
+  /// )
+  /// ```
+  final CallbackConfig callback;
 
   /// Additional HTTP header fields to set when loading the initial URL.
   ///

@@ -1,71 +1,19 @@
 import 'package:redirect_io/redirect_io.dart';
 import 'package:test/test.dart';
 
+/// Test subclass that returns default options.
+class TestRedirectIo extends RedirectIo {
+  @override
+  ServerRedirectOptions getOptions(RedirectOptions options) {
+    return const ServerRedirectOptions();
+  }
+}
+
 void main() {
   group('RedirectIo', () {
-    test('can create instance with default options', () {
-      final io = RedirectIo();
-      expect(io.ioOptions.callbackUrl, isNull);
-      expect(io.ioOptions.openBrowser, isTrue);
-    });
-
-    test('can create instance with custom options', () {
-      final io = RedirectIo(
-        ioOptions: IoRedirectOptions(
-          callbackUrl: Uri.parse('http://127.0.0.1:8080/redirect/callback'),
-          openBrowser: false,
-        ),
-      );
-
-      expect(io.ioOptions.callbackUrl!.host, equals('127.0.0.1'));
-      expect(io.ioOptions.callbackUrl!.port, equals(8080));
-      expect(io.ioOptions.callbackUrl!.path, equals('/redirect/callback'));
-      expect(io.ioOptions.openBrowser, isFalse);
-    });
-
-    test('serverPort is null before run', () {
-      final io = RedirectIo();
-      expect(io.serverPort, isNull);
-    });
-
-    test('callbackUrl is null before run', () {
-      final io = RedirectIo();
-      expect(io.callbackUrl, isNull);
-    });
-  });
-
-  group('IoRedirectOptions', () {
-    test('copyWith creates new instance with replaced fields', () {
-      final original = IoRedirectOptions(
-        callbackUrl: Uri.parse('http://localhost:8080/callback'),
-      );
-
-      final copied = original.copyWith(
-        callbackUrl: Uri.parse('http://127.0.0.1:8080/callback'),
-      );
-
-      expect(copied.callbackUrl!.host, equals('127.0.0.1'));
-    });
-  });
-
-  group('AuthorizationException', () {
-    test('toString with description', () {
-      const exception = AuthorizationException(
-        error: 'access_denied',
-        description: 'User denied access',
-      );
-      expect(
-        exception.toString(),
-        equals('AuthorizationException: access_denied - User denied access'),
-      );
-    });
-
-    test('toString without description', () {
-      const exception = AuthorizationException(error: 'invalid_request');
-      expect(
-        exception.toString(),
-        equals('AuthorizationException: invalid_request'),
-      );
+    test('can create subclass instance', () {
+      final io = TestRedirectIo();
+      expect(io.serverPortForNonce('nonexistent'), isNull);
     });
   });
 

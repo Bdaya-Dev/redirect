@@ -12,7 +12,6 @@
 ///
 /// final handle = redirect.run(
 ///   url: Uri.parse('https://auth.example.com/authorize'),
-///   callbackUrlScheme: 'https',
 ///   options: RedirectOptions(
 ///     platformOptions: {
 ///       WebRedirectOptions.key: WebRedirectOptions(

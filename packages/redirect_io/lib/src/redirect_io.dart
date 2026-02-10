@@ -2,84 +2,95 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:redirect_core/redirect_core.dart';
-import 'package:redirect_io/src/io_redirect_options.dart';
 
-/// Pure Dart IO implementation of [RedirectHandler].
+/// Tracks state for a single in-flight IO redirect operation.
+class _PendingIoRedirect {
+  _PendingIoRedirect({
+    required this.server,
+    required this.completer,
+  });
+
+  final HttpServer server;
+  final Completer<RedirectResult> completer;
+}
+
+/// Abstract pure Dart IO implementation of [RedirectHandler].
 ///
 /// Uses a loopback HTTP server to capture redirect callbacks.
 /// Automatically opens the system browser and waits for the callback.
 ///
 /// This implementation works on Linux, macOS, and Windows without any
 /// platform-specific dependencies.
-class RedirectIo implements RedirectHandler {
+///
+/// Supports multiple concurrent redirect operations — each run gets its
+/// own loopback server on a separate ephemeral port.
+///
+/// Subclasses must implement [getOptions] to extract [ServerRedirectOptions]
+/// from the per-redirect [RedirectOptions].
+abstract class RedirectIo implements RedirectHandler {
   /// Creates a new IO redirect handler.
+  RedirectIo();
+
+  /// All in-flight redirect operations, keyed by nonce.
+  final Map<String, _PendingIoRedirect> _pendingRedirects = {};
+
+  /// Extracts [ServerRedirectOptions] from the per-redirect [options].
   ///
-  /// [ioOptions] configures server port, host, HTML responses, etc.
-  RedirectIo({
-    this.ioOptions = const IoRedirectOptions(),
-  });
-
-  /// IO-specific options.
-  final IoRedirectOptions ioOptions;
-
-  HttpServer? _server;
-  Completer<RedirectResult>? _completer;
+  /// Subclasses decide how to map the generic [RedirectOptions]
+  /// (and its [RedirectOptions.platformOptions]) to [ServerRedirectOptions].
+  ServerRedirectOptions getOptions(RedirectOptions options);
 
   @override
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
-    // Extract IO options from platformOptions, falling back to
-    // constructor-injected defaults.
-    final effectiveOptions = IoRedirectOptions.fromOptions(
-      options,
-      ioOptions,
-    );
+    // Extract IO options via the subclass hook.
+    final effectiveOptions = getOptions(options);
 
-    // Cancel any existing operation synchronously
-    _cancelSync();
+    // Generate nonce for this redirect operation.
+    final nonce = generateRedirectNonce();
 
-    _completer = Completer<RedirectResult>();
-    final completer = _completer!;
+    final completer = Completer<RedirectResult>();
 
     Future<RedirectResult> doRun() async {
       try {
         final callbackUrl = effectiveOptions.callbackUrl;
         final host = callbackUrl?.host ?? 'localhost';
         final port = callbackUrl?.port ?? 0;
-        final callbackPath =
-            (callbackUrl?.path.isNotEmpty ?? false) ? callbackUrl!.path : '/callback';
+        final callbackPath = (callbackUrl?.path.isNotEmpty ?? false)
+            ? callbackUrl!.path
+            : '/callback';
 
         // Start loopback server
-        _server = await HttpServer.bind(host, port);
-        final actualPort = _server!.port;
+        final server = await HttpServer.bind(host, port);
+        final actualPort = server.port;
 
-        // Construct the redirect URI using the loopback server
-        final redirectUri = Uri(
-          scheme: 'http',
-          host: host,
-          port: actualPort,
-          path: callbackPath,
+        // Track this operation.
+        _pendingRedirects[nonce] = _PendingIoRedirect(
+          server: server,
+          completer: completer,
         );
 
-        // Modify the authorization URL to use our redirect URI
-        final authUrl = url.replace(
-          queryParameters: {
-            ...url.queryParameters,
-            'redirect_uri': redirectUri.toString(),
-          },
-        );
+        // Inform the caller of the actual port (useful when port 0 was used).
+        effectiveOptions.portCompleter?.complete(actualPort);
+
+        // Build the final URL to navigate to.
+        final navigateUrl =
+            effectiveOptions.urlBuilder?.call(actualPort) ?? url;
+
+        // Default validator: match by callback path.
+        final callbackValidator = effectiveOptions.callbackValidator ??
+            (Uri uri) => uri.path == callbackPath;
 
         // Handle incoming requests
-        _server!.listen(
+        server.listen(
           (request) async {
             await _handleRequest(
+              nonce: nonce,
               request: request,
-              callbackUrlScheme: callbackUrlScheme,
               completer: completer,
-              callbackPath: callbackPath,
+              callbackValidator: callbackValidator,
               ioOptions: effectiveOptions,
             );
           },
@@ -88,18 +99,19 @@ class RedirectIo implements RedirectHandler {
               completer.complete(
                 RedirectFailure(error: error, stackTrace: stackTrace),
               );
+              unawaited(_cleanupNonce(nonce));
             }
           },
         );
 
         // Launch the browser if enabled
         if (effectiveOptions.openBrowser) {
-          final launched = await _launchBrowser(authUrl);
+          final launched = await _launchBrowser(navigateUrl);
 
           if (!launched) {
-            await _cleanup();
+            await _cleanupNonce(nonce);
             return RedirectFailure(
-              error: Exception('Failed to launch browser. URL: $authUrl'),
+              error: Exception('Failed to launch browser. URL: $navigateUrl'),
               stackTrace: StackTrace.current,
             );
           }
@@ -110,7 +122,7 @@ class RedirectIo implements RedirectHandler {
           return await completer.future.timeout(
             options.timeout!,
             onTimeout: () {
-              unawaited(_cleanup());
+              unawaited(_cleanupNonce(nonce));
               return const RedirectCancelled();
             },
           );
@@ -118,64 +130,43 @@ class RedirectIo implements RedirectHandler {
 
         return await completer.future;
       } on Object catch (e, s) {
-        await _cleanup();
+        if (effectiveOptions.portCompleter != null &&
+            !effectiveOptions.portCompleter!.isCompleted) {
+          effectiveOptions.portCompleter!.completeError(e, s);
+        }
+        await _cleanupNonce(nonce);
         return RedirectFailure(error: e, stackTrace: s);
       }
     }
 
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
+      nonce: nonce,
       options: options,
       result: doRun(),
-      cancel: _cancel,
+      cancel: () => _cancelNonce(nonce),
     );
   }
 
   Future<void> _handleRequest({
+    required String nonce,
     required HttpRequest request,
-    required String callbackUrlScheme,
     required Completer<RedirectResult> completer,
-    required String callbackPath,
-    required IoRedirectOptions ioOptions,
+    required CallbackValidator callbackValidator,
+    required ServerRedirectOptions ioOptions,
   }) async {
     try {
-      if (request.uri.path == callbackPath) {
-        // Check for error response from the redirect target
-        final error = request.uri.queryParameters['error'];
-        if (error != null) {
-          await _sendErrorResponse(request, error, ioOptions);
-          if (!completer.isCompleted) {
-            completer.complete(
-              RedirectFailure(
-                error: AuthorizationException(
-                  error: error,
-                  description: request.uri.queryParameters['error_description'],
-                ),
-                stackTrace: StackTrace.current,
-              ),
-            );
-          }
-          await _cleanup();
-          return;
-        }
+      final isCallback = await callbackValidator(request.uri);
+      if (isCallback) {
+        // Send response to browser (using builder or default)
+        await _sendCallbackResponse(request, ioOptions);
 
-        // Construct the callback URI with the original scheme
-        final callbackUri = Uri(
-          scheme: callbackUrlScheme,
-          host: 'callback',
-          queryParameters: request.uri.queryParameters,
-        );
-
-        // Send success response to browser
-        await _sendSuccessResponse(request, ioOptions);
-
-        // Complete with success
+        // Complete with the actual request URI as-is.
         if (!completer.isCompleted) {
-          completer.complete(RedirectSuccess(uri: callbackUri));
+          completer.complete(RedirectSuccess(uri: request.uri));
         }
 
-        await _cleanup();
+        await _cleanupNonce(nonce);
       } else {
         // Handle other paths (favicon, etc.)
         request.response.statusCode = HttpStatus.notFound;
@@ -188,42 +179,32 @@ class RedirectIo implements RedirectHandler {
     }
   }
 
-  Future<void> _sendSuccessResponse(
+  Future<void> _sendCallbackResponse(
     HttpRequest request,
-    IoRedirectOptions ioOptions,
+    ServerRedirectOptions ioOptions,
   ) async {
-    request.response
-      ..statusCode = HttpStatus.ok
-      ..headers.contentType = ContentType.html
-      ..write(ioOptions.successHtml ?? _defaultSuccessHtml);
-    await request.response.close();
-  }
+    final builder = ioOptions.httpResponseBuilder;
+    final requestHeaders = <String, String>{};
+    request.headers.forEach((name, values) {
+      requestHeaders[name] = values.join(', ');
+    });
+    final callbackRequest = HttpCallbackRequest(
+      uri: request.uri,
+      method: request.method,
+      headers: requestHeaders,
+    );
+    final response = builder != null
+        ? builder(callbackRequest)
+        : const HttpCallbackResponse(
+            body: _defaultCallbackHtml,
+          );
 
-  Future<void> _sendErrorResponse(
-    HttpRequest request,
-    String error,
-    IoRedirectOptions ioOptions,
-  ) async {
-    // HTML-escape the error to prevent XSS attacks
-    final escapedError = _htmlEscape(error);
-    final html =
-        ioOptions.errorHtml ??
-        _defaultErrorHtml.replaceAll('{{error}}', escapedError);
-    request.response
-      ..statusCode = HttpStatus.badRequest
-      ..headers.contentType = ContentType.html
-      ..write(html);
+    request.response.statusCode = response.statusCode;
+    for (final entry in response.headers.entries) {
+      request.response.headers.set(entry.key, entry.value);
+    }
+    request.response.write(response.body);
     await request.response.close();
-  }
-
-  /// Escapes HTML special characters to prevent XSS.
-  String _htmlEscape(String text) {
-    return text
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#x27;');
   }
 
   /// Launches the system browser with the given URL.
@@ -255,79 +236,39 @@ class RedirectIo implements RedirectHandler {
     }
   }
 
-  void _cancelSync() {
-    if (_completer != null && !_completer!.isCompleted) {
-      _completer!.complete(const RedirectCancelled());
+  /// Cancels a specific redirect operation by nonce.
+  Future<void> _cancelNonce(String nonce) async {
+    final pending = _pendingRedirects.remove(nonce);
+    if (pending == null) return;
+    if (!pending.completer.isCompleted) {
+      pending.completer.complete(const RedirectCancelled());
     }
-    unawaited(_cleanup());
+    await pending.server.close(force: true);
   }
 
-  Future<void> _cancel() async {
-    if (_completer != null && !_completer!.isCompleted) {
-      _completer!.complete(const RedirectCancelled());
-    }
-    await _cleanup();
+  /// Cleans up server resources for a specific nonce without completing
+  /// the completer (assumes it's already completed or will be completed
+  /// by the caller).
+  Future<void> _cleanupNonce(String nonce) async {
+    final pending = _pendingRedirects.remove(nonce);
+    if (pending == null) return;
+    await pending.server.close(force: true);
   }
 
-  Future<void> _cleanup() async {
-    await _server?.close(force: true);
-    _server = null;
-    _completer = null;
-  }
-
-  /// Returns the port the server is listening on.
+  /// Returns the port the server is listening on for a given nonce.
   ///
-  /// Returns null if the server is not running.
-  int? get serverPort => _server?.port;
-
-  /// Returns the full callback URL the server is listening on.
-  ///
-  /// Useful when [IoRedirectOptions.openBrowser] is false and you need
-  /// to display the URL to the user.
-  ///
-  /// Returns null if the server is not running.
-  Uri? get callbackUrl {
-    if (_server == null) return null;
-    final url = ioOptions.callbackUrl;
-    return Uri(
-      scheme: 'http',
-      host: url?.host ?? 'localhost',
-      port: _server!.port,
-      path: (url?.path.isNotEmpty ?? false) ? url!.path : '/callback',
-    );
-  }
+  /// Returns null if no server is running for that nonce.
+  int? serverPortForNonce(String nonce) =>
+      _pendingRedirects[nonce]?.server.port;
 }
 
-/// An exception representing an authorization error response.
-class AuthorizationException implements Exception {
-  /// Creates an authorization exception.
-  const AuthorizationException({
-    required this.error,
-    this.description,
-  });
-
-  /// The error code from the authorization server.
-  final String error;
-
-  /// Optional human-readable description of the error.
-  final String? description;
-
-  @override
-  String toString() {
-    if (description != null) {
-      return 'AuthorizationException: $error - $description';
-    }
-    return 'AuthorizationException: $error';
-  }
-}
-
-const _defaultSuccessHtml = '''
+const _defaultCallbackHtml = '''
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Authentication Successful</title>
+  <title>Redirect Complete</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -353,57 +294,9 @@ const _defaultSuccessHtml = '''
 </head>
 <body>
   <div class="container">
-    <div class="checkmark">✓</div>
-    <h1>Authentication Successful</h1>
+    <div class="checkmark">&#x2713;</div>
+    <h1>Redirect Complete</h1>
     <p>You can close this window and return to the application.</p>
-  </div>
-</body>
-</html>
-''';
-
-const _defaultErrorHtml = '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Authentication Failed</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-    }
-    .container {
-      text-align: center;
-      padding: 2rem;
-    }
-    .error-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-    h1 { margin: 0 0 0.5rem; }
-    p { opacity: 0.9; }
-    .error-code {
-      background: rgba(0,0,0,0.2);
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      margin-top: 1rem;
-      font-family: monospace;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="error-icon">✗</div>
-    <h1>Authentication Failed</h1>
-    <p>An error occurred during authentication.</p>
-    <div class="error-code">{{error}}</div>
   </div>
 </body>
 </html>

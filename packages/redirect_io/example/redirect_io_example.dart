@@ -13,16 +13,14 @@ import 'dart:io';
 
 import 'package:redirect_io/redirect_io.dart';
 
-void main() async {
-  stdout
-    ..writeln('Redirect IO Example')
-    ..writeln('====================\n');
-
-  // Create the redirect handler with optional custom settings
-  final redirect = RedirectIo(
-    ioOptions: const IoRedirectOptions(
-      // Show success/error pages in browser
-      successHtml: '''
+/// Example subclass that provides per-redirect options.
+class ExampleRedirectIo extends RedirectIo {
+  @override
+  ServerRedirectOptions getOptions(RedirectOptions options) {
+    return ServerRedirectOptions(
+      httpResponseBuilder: (request) {
+        return const HttpCallbackResponse(
+          body: '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -42,18 +40,28 @@ void main() async {
 </head>
 <body>
   <div class="container">
-    <h1>✓ Authentication Successful</h1>
+    <h1>&#x2713; Redirect Complete</h1>
     <p>You can close this window and return to the app.</p>
   </div>
 </body>
 </html>
 ''',
-    ),
-  );
+        );
+      },
+    );
+  }
+}
+
+void main() async {
+  stdout
+    ..writeln('Redirect IO Example')
+    ..writeln('====================\n');
+
+  // Create the redirect handler
+  final redirect = ExampleRedirectIo();
 
   // Test URL using httpbin to simulate a redirect
   // In a real app, this would be your provider's authorization URL
-  const callbackScheme = 'myapp';
   final testUrl = Uri.parse(
     'https://httpbin.org/redirect-to'
     '?url=myapp%3A%2F%2Fcallback%3Fcode%3Dtest_auth_code_123'
@@ -69,7 +77,6 @@ void main() async {
 
   final handle = redirect.run(
     url: testUrl,
-    callbackUrlScheme: callbackScheme,
     options: const RedirectOptions(
       timeout: Duration(minutes: 2),
     ),

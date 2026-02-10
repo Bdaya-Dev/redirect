@@ -18,7 +18,6 @@ library;
 //   dart test test/integration/redirect_jaspr_integration_test.dart
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
-import 'package:jaspr_test/jaspr_test.dart';
 import 'package:jaspr_test/server_test.dart';
 import 'package:redirect_core/redirect_core.dart';
 
@@ -32,14 +31,12 @@ class RedirectDemo extends StatefulComponent {
   const RedirectDemo({
     required this.handler,
     required this.redirectUrl,
-    this.callbackUrlScheme = 'myapp',
     this.options = const RedirectOptions(),
     super.key,
   });
 
   final RedirectHandler handler;
   final Uri redirectUrl;
-  final String callbackUrlScheme;
   final RedirectOptions options;
 
   @override
@@ -59,7 +56,6 @@ class _RedirectDemoState extends State<RedirectDemo> {
 
     _activeHandle = component.handler.run(
       url: component.redirectUrl,
-      callbackUrlScheme: component.callbackUrlScheme,
       options: component.options,
     );
 
@@ -124,7 +120,6 @@ class _MockRedirectHandler implements RedirectHandler {
   @override
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
     runCount++;
@@ -138,7 +133,6 @@ class _MockRedirectHandler implements RedirectHandler {
 
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
       options: options,
       result: doRun(),
       cancel: () async {
@@ -277,7 +271,6 @@ void main() {
         RedirectDemo(
           handler: handler,
           redirectUrl: authUrl,
-          callbackUrlScheme: 'custom',
         ),
       );
 

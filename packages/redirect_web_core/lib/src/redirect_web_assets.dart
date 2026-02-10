@@ -23,8 +23,8 @@
 ///
 /// | File | Purpose | Required? |
 /// |------|---------|-----------|
-/// | `redirect_sw.js` | Service Worker -- intercepts callback navigations and broadcasts via BroadcastChannel | Required (recommended path) |
-/// | `redirect_callback.js` | Fallback -- relays the URL via BroadcastChannel | Only if SW is not used |
+/// | `redirect_sw.js` | Service Worker | Required |
+/// | `redirect_callback.js` | Fallback relay | If SW is not used |
 library;
 
 /// Provides access to the JavaScript source files that ship with the
@@ -39,8 +39,8 @@ abstract final class RedirectWebAssets {
   /// Must be placed at the web root (e.g. `web/redirect_sw.js`) because
   /// browsers reject Service Worker registration from Blob or data URLs.
   ///
-  /// Registered automatically when [WebRedirectOptions.autoRegisterServiceWorker]
-  /// is `true`.
+  /// Registered automatically when
+  /// `WebRedirectOptions.autoRegisterServiceWorker` is `true`.
   static const serviceWorkerJs = '''
 // redirect_sw.js -- Service Worker for redirect callback handling.
 //

@@ -31,7 +31,6 @@ void main() {
 
       final handle = plugin.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           timeout: Duration(milliseconds: 200),
           platformOptions: {
@@ -45,7 +44,6 @@ void main() {
       );
 
       expect(handle.url, equals(Uri.parse('about:blank')));
-      expect(handle.callbackUrlScheme, equals('myapp'));
     });
 
     test('run() delegates to core RedirectWeb', () async {
@@ -53,7 +51,6 @@ void main() {
 
       final handle = plugin.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           timeout: Duration(milliseconds: 100),
           platformOptions: {
@@ -67,7 +64,6 @@ void main() {
       );
 
       expect(handle.url, equals(Uri.parse('about:blank')));
-      expect(handle.callbackUrlScheme, equals('myapp'));
 
       // Times out → RedirectCancelled
       final result = await handle.result;
@@ -84,7 +80,6 @@ void main() {
 
       final handle1 = plugin.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           timeout: Duration(milliseconds: 200),
           platformOptions: {
@@ -99,7 +94,6 @@ void main() {
 
       final handle2 = plugin.run(
         url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           timeout: Duration(milliseconds: 200),
           platformOptions: {
@@ -111,9 +105,6 @@ void main() {
           },
         ),
       );
-
-      expect(handle1.callbackUrlScheme, equals('myapp'));
-      expect(handle2.callbackUrlScheme, equals('myapp'));
 
       // Both should complete (via timeout)
       final results = await Future.wait([handle1.result, handle2.result]);

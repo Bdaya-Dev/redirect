@@ -11,7 +11,6 @@ class ExampleRedirect implements RedirectHandler {
   @override
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
     // This is just a mock implementation for demonstration.
@@ -22,18 +21,16 @@ class ExampleRedirect implements RedirectHandler {
 
     stdout
       ..writeln('Opening URL: $url')
-      ..writeln('Waiting for callback with scheme: $callbackUrlScheme')
       ..writeln('Options: $options');
 
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
       options: options,
       result: Future.delayed(
         const Duration(milliseconds: 100),
         () => RedirectSuccess(
           uri: Uri.parse(
-            '$callbackUrlScheme://callback?code=mock_code&state=abc123',
+            'myapp://callback?code=mock_code&state=abc123',
           ),
         ),
       ),
@@ -50,12 +47,14 @@ void main() async {
   // Example: Run a redirect flow
   final handle = redirect.run(
     url: Uri.parse('https://auth.example.com/authorize?client_id=xxx'),
-    callbackUrlScheme: 'myapp',
     options: const RedirectOptions(
       timeout: Duration(minutes: 5),
       preferEphemeral: true,
     ),
   );
+
+  // Each handle has a unique nonce (redirect request ID)
+  stdout.writeln('Nonce: ${handle.nonce}');
 
   final result = await handle.result;
 

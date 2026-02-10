@@ -28,6 +28,7 @@ class AndroidOptions {
 /// Request to start a redirect-based authentication flow.
 class RunRequest {
   RunRequest({
+    required this.nonce,
     required this.url,
     required this.callbackUrlScheme,
     required this.preferEphemeral,
@@ -35,6 +36,11 @@ class RunRequest {
     this.timeoutMillis,
   });
 
+  /// Unique identifier for this redirect operation.
+  ///
+  /// Used to correlate the request with its callback, enabling
+  /// multiple concurrent redirect flows.
+  final String nonce;
   final String url;
   final String callbackUrlScheme;
   final bool preferEphemeral;
@@ -49,6 +55,8 @@ abstract class RedirectHostApi {
   @async
   String? run(RunRequest request);
 
-  /// Cancels the current redirect flow.
-  void cancel();
+  /// Cancels the redirect flow identified by [nonce].
+  ///
+  /// If [nonce] is empty, cancels all pending operations.
+  void cancel(String nonce);
 }

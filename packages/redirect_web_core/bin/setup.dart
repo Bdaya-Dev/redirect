@@ -65,8 +65,9 @@ void main(List<String> args) {
     count++;
   }
 
-  stdout.writeln('redirect_web_core: setting up web assets...');
-  stdout.writeln();
+  stdout
+    ..writeln('redirect_web_core: setting up web assets...')
+    ..writeln();
 
   if (!noSw) {
     writeFile('redirect_sw.js', RedirectWebAssets.serviceWorkerJs);
@@ -77,22 +78,23 @@ void main(List<String> args) {
 
   stdout.writeln();
   if (count > 0) {
-    stdout.writeln('Done! $count file(s) written to $outDir/.');
-    stdout.writeln();
-    stdout.writeln('Next steps:');
-    stdout.writeln('  1. Enable auto-registration in your WebRedirectOptions:');
-    stdout.writeln(
-      '       autoRegisterServiceWorker: true,',
-    );
-    stdout.writeln(
-      '       callbackPath: \'/callback.html\',',
-    );
-    stdout.writeln(
-      '  2. Set your OAuth redirect URI to point to callback.html',
-    );
-    stdout.writeln(
-      '  3. Commit the generated files to version control',
-    );
+    stdout
+      ..writeln('Done! $count file(s) written to $outDir/.')
+      ..writeln()
+      ..writeln('Next steps:')
+      ..writeln('  1. Enable auto-registration in your WebRedirectOptions:')
+      ..writeln(
+        '       autoRegisterServiceWorker: true,',
+      )
+      ..writeln(
+        "       callbackPath: '/callback.html',",
+      )
+      ..writeln(
+        '  2. Set your OAuth redirect URI to point to callback.html',
+      )
+      ..writeln(
+        '  3. Commit the generated files to version control',
+      );
   } else {
     stdout.writeln('No files written. All assets already exist.');
   }

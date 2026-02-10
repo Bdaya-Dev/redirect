@@ -129,20 +129,20 @@ void main() {
       jsEval(RedirectWebAssets.callbackJs);
 
       // Must NOT close synchronously.
-      final before = (jsEval('window.__closeCalled') as JSBoolean).toDart;
+      final before = (jsEval('window.__closeCalled')! as JSBoolean).toDart;
       expect(before, isFalse);
 
       // Wait past the 1500 ms timeout + buffer.
       await Future<void>.delayed(const Duration(milliseconds: 2000));
 
-      final after = (jsEval('window.__closeCalled') as JSBoolean).toDart;
+      final after = (jsEval('window.__closeCalled')! as JSBoolean).toDart;
       expect(after, isTrue);
     });
 
     test('uses _scheme query-parameter override', () async {
       const customScheme = 'custom';
       const channelName = 'test_cb_scheme_override';
-      final customKey = 'redirect_channels_$customScheme';
+      const customKey = 'redirect_channels_$customScheme';
       web.window.localStorage.setItem(customKey, jsonEncode([channelName]));
 
       final received = Completer<String>();
@@ -208,14 +208,16 @@ void main() {
     test('registers all four event listeners', () {
       for (final type in ['message', 'install', 'activate', 'fetch']) {
         final kind =
-            (jsEval("typeof window.__sw.listeners['$type']") as JSString)
+            (jsEval("typeof window.__sw.listeners['$type']")! as JSString)
                 .toDart;
         expect(kind, equals('function'), reason: '$type handler missing');
       }
     });
 
     test('default callbackPath is /callback', () {
-      final path = (jsEval('window.__sw.getCallbackPath()') as JSString).toDart;
+      final path =
+          (jsEval('window.__sw.getCallbackPath()')! as JSString)
+              .toDart;
       expect(path, equals('/callback'));
     });
 
@@ -226,7 +228,9 @@ void main() {
         });
       ''');
 
-      final path = (jsEval('window.__sw.getCallbackPath()') as JSString).toDart;
+      final path =
+          (jsEval('window.__sw.getCallbackPath()')! as JSString)
+              .toDart;
       expect(path, equals('/auth/done'));
     });
 
@@ -290,7 +294,9 @@ void main() {
         });
       ''');
 
-      final path = (jsEval('window.__sw.getCallbackPath()') as JSString).toDart;
+      final path =
+          (jsEval('window.__sw.getCallbackPath()')! as JSString)
+              .toDart;
       expect(path, equals('/callback'));
     });
   });
@@ -520,6 +526,6 @@ void main() {
 /// Evaluates [expr] (which must return a JS array) and returns it as a
 /// decoded Dart List.
 List<dynamic> _parseJsonArray(String expr) {
-  final json = (jsEval('JSON.stringify($expr)') as JSString).toDart;
+  final json = (jsEval('JSON.stringify($expr)')! as JSString).toDart;
   return jsonDecode(json) as List<dynamic>;
 }

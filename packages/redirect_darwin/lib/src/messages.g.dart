@@ -29,19 +29,95 @@ bool _deepEquals(Object? a, Object? b) {
 }
 
 
+/// The type of callback URL matching to use.
+enum CallbackType {
+  /// Match by custom URL scheme (e.g., `myapp://...`).
+  customScheme,
+  /// Match by HTTPS host and path (Universal Links).
+  https,
+}
+
+/// Configuration for how to match callback URLs.
+class CallbackConfigMessage {
+  CallbackConfigMessage({
+    required this.type,
+    this.scheme,
+    this.host,
+    this.path,
+  });
+
+  /// The type of callback matching.
+  CallbackType type;
+
+  /// The custom URL scheme (for [CallbackType.customScheme]).
+  String? scheme;
+
+  /// The HTTPS host (for [CallbackType.https]).
+  String? host;
+
+  /// The HTTPS path (for [CallbackType.https]).
+  String? path;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      type,
+      scheme,
+      host,
+      path,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static CallbackConfigMessage decode(Object result) {
+    result as List<Object?>;
+    return CallbackConfigMessage(
+      type: result[0]! as CallbackType,
+      scheme: result[1] as String?,
+      host: result[2] as String?,
+      path: result[3] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! CallbackConfigMessage || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(encode(), other.encode());
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => Object.hashAll(_toList())
+;
+}
+
 /// Request to start a redirect-based authentication flow.
 class RunRequest {
   RunRequest({
+    required this.nonce,
     required this.url,
-    required this.callbackUrlScheme,
+    required this.callback,
     required this.preferEphemeral,
     this.timeoutMillis,
     this.additionalHeaderFields,
   });
 
+  /// Unique identifier for this redirect operation.
+  ///
+  /// Used to correlate the request with its callback, enabling
+  /// multiple concurrent redirect flows.
+  String nonce;
+
   String url;
 
-  String callbackUrlScheme;
+  CallbackConfigMessage callback;
 
   bool preferEphemeral;
 
@@ -55,8 +131,9 @@ class RunRequest {
 
   List<Object?> _toList() {
     return <Object?>[
+      nonce,
       url,
-      callbackUrlScheme,
+      callback,
       preferEphemeral,
       timeoutMillis,
       additionalHeaderFields,
@@ -69,11 +146,12 @@ class RunRequest {
   static RunRequest decode(Object result) {
     result as List<Object?>;
     return RunRequest(
-      url: result[0]! as String,
-      callbackUrlScheme: result[1]! as String,
-      preferEphemeral: result[2]! as bool,
-      timeoutMillis: result[3] as int?,
-      additionalHeaderFields: (result[4] as Map<Object?, Object?>?)?.cast<String?, String?>(),
+      nonce: result[0]! as String,
+      url: result[1]! as String,
+      callback: result[2]! as CallbackConfigMessage,
+      preferEphemeral: result[3]! as bool,
+      timeoutMillis: result[4] as int?,
+      additionalHeaderFields: (result[5] as Map<Object?, Object?>?)?.cast<String?, String?>(),
     );
   }
 
@@ -103,8 +181,14 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    }    else if (value is RunRequest) {
+    }    else if (value is CallbackType) {
       buffer.putUint8(129);
+      writeValue(buffer, value.index);
+    }    else if (value is CallbackConfigMessage) {
+      buffer.putUint8(130);
+      writeValue(buffer, value.encode());
+    }    else if (value is RunRequest) {
+      buffer.putUint8(131);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -115,6 +199,11 @@ class _PigeonCodec extends StandardMessageCodec {
   Object? readValueOfType(int type, ReadBuffer buffer) {
     switch (type) {
       case 129: 
+        final value = readValue(buffer) as int?;
+        return value == null ? null : CallbackType.values[value];
+      case 130: 
+        return CallbackConfigMessage.decode(readValue(buffer)!);
+      case 131: 
         return RunRequest.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -159,15 +248,17 @@ class RedirectHostApi {
     }
   }
 
-  /// Cancels the current redirect flow.
-  Future<void> cancel() async {
+  /// Cancels the redirect flow identified by [nonce].
+  ///
+  /// If [nonce] is empty, cancels all pending operations.
+  Future<void> cancel(String nonce) async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.redirect_darwin.RedirectHostApi.cancel$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[nonce]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);

@@ -23,17 +23,20 @@ class RedirectAndroidPlugin extends RedirectPlatform {
   @override
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
+    // Generate nonce for this redirect operation.
+    final nonce = generateRedirectNonce();
+
     Future<RedirectResult> doRun() async {
       try {
         final androidOptions = AndroidRedirectOptions.fromOptions(options);
 
         final result = await _api.run(
           RunRequest(
+            nonce: nonce,
             url: url.toString(),
-            callbackUrlScheme: callbackUrlScheme,
+            callbackUrlScheme: androidOptions.callbackUrlScheme,
             preferEphemeral: options.preferEphemeral,
             timeoutMillis: options.timeout?.inMilliseconds,
             androidOptions: AndroidOptions(
@@ -61,10 +64,10 @@ class RedirectAndroidPlugin extends RedirectPlatform {
 
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
+      nonce: nonce,
       options: options,
       result: doRun(),
-      cancel: _api.cancel,
+      cancel: () => _api.cancel(nonce),
     );
   }
 }

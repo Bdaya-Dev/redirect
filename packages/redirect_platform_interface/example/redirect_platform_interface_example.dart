@@ -15,7 +15,6 @@ class MyCustomPlatform extends RedirectPlatform {
   @override
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
     // Implement platform-specific redirect logic here.
@@ -23,11 +22,10 @@ class MyCustomPlatform extends RedirectPlatform {
     // and return the result.
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
       options: options,
       result: Future.value(
         RedirectSuccess(
-          uri: Uri.parse('$callbackUrlScheme://callback'),
+          uri: Uri.parse('myapp://callback'),
         ),
       ),
       cancel: () async {},

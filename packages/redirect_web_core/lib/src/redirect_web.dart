@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
-import 'dart:math';
 
 import 'package:redirect_core/redirect_core.dart';
 import 'package:web/web.dart' as web;
@@ -30,7 +29,6 @@ extension type _ServiceWorkerMessage._(JSObject _) implements JSObject {
 /// final redirect = RedirectWeb();
 /// final handle = redirect.run(
 ///   url: Uri.parse('https://auth.example.com/authorize'),
-///   callbackUrlScheme: 'https',
 /// );
 /// final result = await handle.result;
 /// ```
@@ -42,7 +40,6 @@ extension type _ServiceWorkerMessage._(JSObject _) implements JSObject {
 /// ```dart
 /// final handle = redirect.run(
 ///   url: Uri.parse('https://auth.example.com/authorize'),
-///   callbackUrlScheme: 'https',
 ///   options: RedirectOptions(
 ///     platformOptions: {
 ///       WebRedirectOptions.key: WebRedirectOptions(
@@ -60,33 +57,10 @@ class RedirectWeb implements RedirectHandler {
   @override
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
     final webOptions = WebRedirectOptions.fromOptions(options);
 
-    return runWithWebOptions(
-      url: url,
-      callbackUrlScheme: callbackUrlScheme,
-      options: options,
-      webOptions: webOptions,
-    );
-  }
-
-  /// Runs the redirect with explicit web-specific options.
-  ///
-  /// This method provides full control over how the authorization URL is
-  /// opened on web platforms.
-  ///
-  /// The returned [RedirectHandle] is created **synchronously**, pre-opening
-  /// any required browser window in the current call stack. This avoids
-  /// popup blockers when `run` is called from a user-gesture handler.
-  RedirectHandle runWithWebOptions({
-    required Uri url,
-    required String callbackUrlScheme,
-    RedirectOptions options = const RedirectOptions(),
-    WebRedirectOptions webOptions = const WebRedirectOptions(),
-  }) {
     if (webOptions.autoRegisterServiceWorker) {
       unawaited(
         RedirectWeb.registerServiceWorker(
@@ -98,24 +72,20 @@ class RedirectWeb implements RedirectHandler {
     return switch (webOptions.mode) {
       WebRedirectMode.popup => _runPopup(
         url: url,
-        callbackUrlScheme: callbackUrlScheme,
         options: options,
         webOptions: webOptions,
       ),
       WebRedirectMode.newTab => _runNewTab(
         url: url,
-        callbackUrlScheme: callbackUrlScheme,
         options: options,
         webOptions: webOptions,
       ),
       WebRedirectMode.samePage => _runSamePage(
         url: url,
-        callbackUrlScheme: callbackUrlScheme,
         options: options,
       ),
       WebRedirectMode.hiddenIframe => _runIframe(
         url: url,
-        callbackUrlScheme: callbackUrlScheme,
         options: options,
         webOptions: webOptions,
       ),
@@ -124,7 +94,6 @@ class RedirectWeb implements RedirectHandler {
 
   RedirectHandle _runPopup({
     required Uri url,
-    required String callbackUrlScheme,
     required RedirectOptions options,
     required WebRedirectOptions webOptions,
   }) {
@@ -132,19 +101,22 @@ class RedirectWeb implements RedirectHandler {
     web.Window? popup;
     web.BroadcastChannel? channel;
 
+    // Generate nonce for this redirect operation.
+    final nonce = generateRedirectNonce();
+
     // Each operation gets a unique channel name so concurrent redirects
     // don't interfere, regardless of the protocol being used.
     final channelName =
         webOptions.broadcastChannelName ??
-        'redirect_${callbackUrlScheme}_${_generateNonce()}';
-    _registerChannel(callbackUrlScheme, channelName);
+        'redirect_$nonce';
+    _registerChannel(channelName);
 
     void cleanup() {
       _removeCloseWatcher(channelName);
       channel?.close();
       channel = null;
       popup = null;
-      _unregisterChannel(callbackUrlScheme, channelName);
+      _unregisterChannel(channelName);
     }
 
     void cancelSync() {
@@ -157,7 +129,7 @@ class RedirectWeb implements RedirectHandler {
 
     channel = _createBroadcastChannel(
       channelName: channelName,
-      callbackUrlScheme: callbackUrlScheme,
+      callbackValidator: webOptions.callbackValidator,
       completer: completer,
       onSuccess: () {
         popup?.close();
@@ -202,7 +174,7 @@ class RedirectWeb implements RedirectHandler {
 
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
+      nonce: nonce,
       options: options,
       result: _wrapWithTimeout(completer, options.timeout, cleanup),
       cancel: () async => cancelSync(),
@@ -211,7 +183,6 @@ class RedirectWeb implements RedirectHandler {
 
   RedirectHandle _runNewTab({
     required Uri url,
-    required String callbackUrlScheme,
     required RedirectOptions options,
     required WebRedirectOptions webOptions,
   }) {
@@ -219,19 +190,22 @@ class RedirectWeb implements RedirectHandler {
     web.Window? popup;
     web.BroadcastChannel? channel;
 
+    // Generate nonce for this redirect operation.
+    final nonce = generateRedirectNonce();
+
     // Each operation gets a unique channel name so concurrent redirects
     // don't interfere, regardless of the protocol being used.
     final channelName =
         webOptions.broadcastChannelName ??
-        'redirect_${callbackUrlScheme}_${_generateNonce()}';
-    _registerChannel(callbackUrlScheme, channelName);
+        'redirect_$nonce';
+    _registerChannel(channelName);
 
     void cleanup() {
       _removeCloseWatcher(channelName);
       channel?.close();
       channel = null;
       popup = null;
-      _unregisterChannel(callbackUrlScheme, channelName);
+      _unregisterChannel(channelName);
     }
 
     void cancelSync() {
@@ -244,7 +218,7 @@ class RedirectWeb implements RedirectHandler {
 
     channel = _createBroadcastChannel(
       channelName: channelName,
-      callbackUrlScheme: callbackUrlScheme,
+      callbackValidator: webOptions.callbackValidator,
       completer: completer,
       onSuccess: () {
         popup?.close();
@@ -275,7 +249,7 @@ class RedirectWeb implements RedirectHandler {
 
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
+      nonce: nonce,
       options: options,
       result: _wrapWithTimeout(completer, options.timeout, cleanup),
       cancel: () async => cancelSync(),
@@ -284,15 +258,15 @@ class RedirectWeb implements RedirectHandler {
 
   RedirectHandle _runSamePage({
     required Uri url,
-    required String callbackUrlScheme,
     required RedirectOptions options,
   }) {
+    // Generate nonce for this redirect operation.
+    final nonce = generateRedirectNonce();
+
     // Persist enough state for the reloaded app to resume.
     // sessionStorage survives same-origin navigations within a tab but
     // is not shared across tabs, which is exactly the right scope.
-    web.window.sessionStorage
-      ..setItem(_pendingKey, 'true')
-      ..setItem(_pendingSchemeKey, callbackUrlScheme);
+    web.window.sessionStorage.setItem(_pendingKey, 'true');
 
     // Navigate the current page
     web.window.location.href = url.toString();
@@ -302,7 +276,7 @@ class RedirectWeb implements RedirectHandler {
     // after the app reloads at the callback URL.
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
+      nonce: nonce,
       options: options,
       result: Future.value(const RedirectPending()),
       cancel: () async {},
@@ -311,7 +285,6 @@ class RedirectWeb implements RedirectHandler {
 
   RedirectHandle _runIframe({
     required Uri url,
-    required String callbackUrlScheme,
     required RedirectOptions options,
     required WebRedirectOptions webOptions,
   }) {
@@ -319,19 +292,22 @@ class RedirectWeb implements RedirectHandler {
     web.BroadcastChannel? channel;
     web.HTMLIFrameElement? iframe;
 
+    // Generate nonce for this redirect operation.
+    final nonce = generateRedirectNonce();
+
     // Each operation gets a unique channel name so concurrent redirects
     // don't interfere, regardless of the protocol being used.
     final channelName =
         webOptions.broadcastChannelName ??
-        'redirect_${callbackUrlScheme}_${_generateNonce()}';
-    _registerChannel(callbackUrlScheme, channelName);
+        'redirect_$nonce';
+    _registerChannel(channelName);
 
     void cleanup() {
       channel?.close();
       channel = null;
       iframe?.remove();
       iframe = null;
-      _unregisterChannel(callbackUrlScheme, channelName);
+      _unregisterChannel(channelName);
     }
 
     void cancelSync() {
@@ -343,7 +319,7 @@ class RedirectWeb implements RedirectHandler {
 
     channel = _createBroadcastChannel(
       channelName: channelName,
-      callbackUrlScheme: callbackUrlScheme,
+      callbackValidator: webOptions.callbackValidator,
       completer: completer,
       onSuccess: cleanup,
     );
@@ -360,7 +336,7 @@ class RedirectWeb implements RedirectHandler {
 
     return RedirectHandle(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
+      nonce: nonce,
       options: options,
       result: _wrapWithTimeout(completer, options.timeout, cleanup),
       cancel: () async => cancelSync(),
@@ -370,8 +346,9 @@ class RedirectWeb implements RedirectHandler {
   /// Creates a [web.BroadcastChannel] that completes [completer] on a matching
   /// callback message, then calls [onSuccess] to clean up resources.
   ///
-  /// Each operation uses a unique channel name (see [_generateNonce]), so
-  /// concurrent redirect operations are naturally isolated without relying
+  /// Each operation uses a unique channel name
+  /// (via [generateRedirectNonce]), so concurrent redirect
+  /// operations are naturally isolated without relying
   /// on any protocol-specific parameters.
   ///
   /// This is the **primary** callback detection mechanism. The callback page
@@ -380,9 +357,9 @@ class RedirectWeb implements RedirectHandler {
   /// channels. Each operation listens on its own unique channel.
   static web.BroadcastChannel _createBroadcastChannel({
     required String channelName,
-    required String callbackUrlScheme,
     required Completer<RedirectResult> completer,
     required void Function() onSuccess,
+    WebCallbackValidator? callbackValidator,
   }) {
     final channel = web.BroadcastChannel(channelName)
       ..onmessage = (web.MessageEvent event) {
@@ -393,10 +370,30 @@ class RedirectWeb implements RedirectHandler {
         try {
           final uriString = (data as JSString).toDart;
           final uri = Uri.tryParse(uriString);
-          if (uri == null || uri.scheme != callbackUrlScheme) return;
+          if (uri == null) return;
 
-          completer.complete(RedirectSuccess(uri: uri));
-          onSuccess();
+          // If a validator is provided, check the URI. Since the validator
+          // can be async (FutureOr<bool>), we handle both branches.
+          if (callbackValidator != null) {
+            final result = callbackValidator(uri);
+            if (result is bool) {
+              if (!result) return;
+              completer.complete(RedirectSuccess(uri: uri));
+              onSuccess();
+            } else {
+              // Async validator
+              unawaited(result.then((isValid) {
+                if (isValid && !completer.isCompleted) {
+                  completer.complete(RedirectSuccess(uri: uri));
+                  onSuccess();
+                }
+              }));
+            }
+          } else {
+            // No validator — accept all valid URIs.
+            completer.complete(RedirectSuccess(uri: uri));
+            onSuccess();
+          }
         } on Object {
           // Ignore malformed messages
         }
@@ -471,7 +468,6 @@ class RedirectWeb implements RedirectHandler {
 
   /// `sessionStorage` keys for same-page redirect state.
   static const _pendingKey = 'redirect_pending';
-  static const _pendingSchemeKey = 'redirect_pending_scheme';
 
   /// Checks if the app is returning from a same-page redirect.
   ///
@@ -485,9 +481,11 @@ class RedirectWeb implements RedirectHandler {
   /// Resumes a pending same-page redirect by reading `Uri.base`.
   ///
   /// Call this early in your app's initialization (e.g. `main()`) when
-  /// [hasPendingRedirect] returns `true`. It validates that the current
-  /// URL matches the expected callback scheme, clears the pending state,
-  /// and returns the appropriate [RedirectResult].
+  /// [hasPendingRedirect] returns `true`. It clears the pending state
+  /// and returns the current URL as a [RedirectSuccess].
+  ///
+  /// An optional [callbackValidator] can be provided to validate the
+  /// current URL before accepting it as a callback.
   ///
   /// Returns `null` if no pending redirect exists.
   ///
@@ -506,26 +504,21 @@ class RedirectWeb implements RedirectHandler {
   ///   // Normal app startup...
   /// }
   /// ```
-  static RedirectResult? resumePendingRedirect() {
+  static RedirectResult? resumePendingRedirect({
+    bool Function(Uri)? callbackValidator,
+  }) {
     final storage = web.window.sessionStorage;
     if (storage.getItem(_pendingKey) != 'true') return null;
 
-    final scheme = storage.getItem(_pendingSchemeKey);
-
     // Clean up regardless of outcome.
-    storage
-      ..removeItem(_pendingKey)
-      ..removeItem(_pendingSchemeKey);
+    storage.removeItem(_pendingKey);
 
     final callbackUri = Uri.base;
 
-    // If a scheme was stored, validate it. If not, accept any URI
-    // (backward compatibility with old storage format).
-    if (scheme != null && callbackUri.scheme != scheme) {
+    if (callbackValidator != null && !callbackValidator(callbackUri)) {
       return RedirectFailure(
         error: Exception(
-          'Expected callback scheme "$scheme" but got '
-          '"${callbackUri.scheme}".',
+          'Callback URL validation failed for: $callbackUri',
         ),
         stackTrace: StackTrace.current,
       );
@@ -539,9 +532,7 @@ class RedirectWeb implements RedirectHandler {
   /// Prefer [resumePendingRedirect] which both clears and returns the
   /// result. Use this only if you need to discard a pending redirect.
   static void clearPendingRedirect() {
-    web.window.sessionStorage
-      ..removeItem(_pendingKey)
-      ..removeItem(_pendingSchemeKey);
+    web.window.sessionStorage.removeItem(_pendingKey);
   }
 
   /// Handles the callback and sends the result to the opener via
@@ -550,10 +541,9 @@ class RedirectWeb implements RedirectHandler {
   /// Call this on your callback page to notify the opener window/tab of the
   /// result.
   ///
-  /// If [channelName] is omitted, auto-discovers ALL active channels for
-  /// [callbackUri]'s scheme from `localStorage` and broadcasts to each.
-  /// Each operation listens on its own unique channel, so only the correct
-  /// listener receives the message.
+  /// If [channelName] is omitted, auto-discovers ALL active channels from
+  /// `localStorage` and broadcasts to each. Each operation listens on its
+  /// own unique channel, so only the correct listener receives the message.
   ///
   /// ```dart
   /// // On your callback page (e.g., /callback):
@@ -575,8 +565,8 @@ class RedirectWeb implements RedirectHandler {
       return;
     }
 
-    // Broadcast to every active channel registered for this scheme.
-    final channels = _getChannels(callbackUri.scheme);
+    // Broadcast to every active channel.
+    final channels = _getChannels();
     for (final name in channels) {
       web.BroadcastChannel(name)
         ..postMessage(message)
@@ -586,16 +576,12 @@ class RedirectWeb implements RedirectHandler {
 
   // --- Channel registry (localStorage) ---
 
-  /// `localStorage` key prefix for the per-scheme list of active channels.
-  static const _channelStoragePrefix = 'redirect_channels_';
+  /// `localStorage` key for the list of active channels.
+  static const _channelStorageKey = 'redirect_channels';
 
-  /// Returns the `localStorage` key for a given [scheme].
-  static String _channelStorageKey(String scheme) =>
-      '$_channelStoragePrefix$scheme';
-
-  /// Reads the list of active channel names for [scheme].
-  static List<String> _getChannels(String scheme) {
-    final raw = web.window.localStorage.getItem(_channelStorageKey(scheme));
+  /// Reads the list of active channel names.
+  static List<String> _getChannels() {
+    final raw = web.window.localStorage.getItem(_channelStorageKey);
     if (raw == null || raw.isEmpty) return [];
     try {
       return (jsonDecode(raw) as List<dynamic>).cast<String>();
@@ -604,30 +590,30 @@ class RedirectWeb implements RedirectHandler {
     }
   }
 
-  /// Adds [channelName] to the active list for [scheme].
+  /// Adds [channelName] to the active list.
   ///
   /// Also notifies the Service Worker (if registered) so it can broadcast
   /// directly from the SW context.
-  static void _registerChannel(String scheme, String channelName) {
-    final channels = _getChannels(scheme)..add(channelName);
+  static void _registerChannel(String channelName) {
+    final channels = _getChannels()..add(channelName);
     web.window.localStorage.setItem(
-      _channelStorageKey(scheme),
+      _channelStorageKey,
       jsonEncode(channels),
     );
     _notifyServiceWorker('redirect_register', channelName);
   }
 
-  /// Removes [channelName] from the active list for [scheme].
+  /// Removes [channelName] from the active list.
   ///
   /// Also notifies the Service Worker (if registered) to stop tracking
   /// this channel.
-  static void _unregisterChannel(String scheme, String channelName) {
-    final channels = _getChannels(scheme)..remove(channelName);
+  static void _unregisterChannel(String channelName) {
+    final channels = _getChannels()..remove(channelName);
     if (channels.isEmpty) {
-      web.window.localStorage.removeItem(_channelStorageKey(scheme));
+      web.window.localStorage.removeItem(_channelStorageKey);
     } else {
       web.window.localStorage.setItem(
-        _channelStorageKey(scheme),
+        _channelStorageKey,
         jsonEncode(channels),
       );
     }
@@ -647,13 +633,6 @@ class RedirectWeb implements RedirectHandler {
       // No SW registered or not supported — fine, the callback page
       // script or handleCallback will handle it.
     }
-  }
-
-  /// Generates a short random nonce for unique channel naming.
-  static String _generateNonce() {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    final rng = Random.secure();
-    return List.generate(16, (_) => chars[rng.nextInt(chars.length)]).join();
   }
 
   /// Attempts to close this window/tab.

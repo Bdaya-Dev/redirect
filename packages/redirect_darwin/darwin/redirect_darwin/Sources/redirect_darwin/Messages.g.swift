@@ -128,12 +128,68 @@ func deepHashMessages(value: Any?, hasher: inout Hasher) {
 
     
 
+/// The type of callback URL matching to use.
+enum CallbackType: Int {
+  /// Match by custom URL scheme (e.g., `myapp://...`).
+  case customScheme = 0
+  /// Match by HTTPS host and path (Universal Links).
+  case https = 1
+}
+
+/// Configuration for how to match callback URLs.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct CallbackConfigMessage: Hashable {
+  /// The type of callback matching.
+  var type: CallbackType
+  /// The custom URL scheme (for [CallbackType.customScheme]).
+  var scheme: String? = nil
+  /// The HTTPS host (for [CallbackType.https]).
+  var host: String? = nil
+  /// The HTTPS path (for [CallbackType.https]).
+  var path: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> CallbackConfigMessage? {
+    let type = pigeonVar_list[0] as! CallbackType
+    let scheme: String? = nilOrValue(pigeonVar_list[1])
+    let host: String? = nilOrValue(pigeonVar_list[2])
+    let path: String? = nilOrValue(pigeonVar_list[3])
+
+    return CallbackConfigMessage(
+      type: type,
+      scheme: scheme,
+      host: host,
+      path: path
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      type,
+      scheme,
+      host,
+      path,
+    ]
+  }
+  static func == (lhs: CallbackConfigMessage, rhs: CallbackConfigMessage) -> Bool {
+    return deepEqualsMessages(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashMessages(value: toList(), hasher: &hasher)
+  }
+}
+
 /// Request to start a redirect-based authentication flow.
 ///
 /// Generated class from Pigeon that represents data sent in messages.
 struct RunRequest: Hashable {
+  /// Unique identifier for this redirect operation.
+  ///
+  /// Used to correlate the request with its callback, enabling
+  /// multiple concurrent redirect flows.
+  var nonce: String
   var url: String
-  var callbackUrlScheme: String
+  var callback: CallbackConfigMessage
   var preferEphemeral: Bool
   var timeoutMillis: Int64? = nil
   /// Additional HTTP headers to set on the initial URL load.
@@ -145,15 +201,17 @@ struct RunRequest: Hashable {
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> RunRequest? {
-    let url = pigeonVar_list[0] as! String
-    let callbackUrlScheme = pigeonVar_list[1] as! String
-    let preferEphemeral = pigeonVar_list[2] as! Bool
-    let timeoutMillis: Int64? = nilOrValue(pigeonVar_list[3])
-    let additionalHeaderFields: [String?: String?]? = nilOrValue(pigeonVar_list[4])
+    let nonce = pigeonVar_list[0] as! String
+    let url = pigeonVar_list[1] as! String
+    let callback = pigeonVar_list[2] as! CallbackConfigMessage
+    let preferEphemeral = pigeonVar_list[3] as! Bool
+    let timeoutMillis: Int64? = nilOrValue(pigeonVar_list[4])
+    let additionalHeaderFields: [String?: String?]? = nilOrValue(pigeonVar_list[5])
 
     return RunRequest(
+      nonce: nonce,
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
+      callback: callback,
       preferEphemeral: preferEphemeral,
       timeoutMillis: timeoutMillis,
       additionalHeaderFields: additionalHeaderFields
@@ -161,8 +219,9 @@ struct RunRequest: Hashable {
   }
   func toList() -> [Any?] {
     return [
+      nonce,
       url,
-      callbackUrlScheme,
+      callback,
       preferEphemeral,
       timeoutMillis,
       additionalHeaderFields,
@@ -179,6 +238,14 @@ private class MessagesPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
     case 129:
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return CallbackType(rawValue: enumResultAsInt)
+      }
+      return nil
+    case 130:
+      return CallbackConfigMessage.fromList(self.readValue() as! [Any?])
+    case 131:
       return RunRequest.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -188,8 +255,14 @@ private class MessagesPigeonCodecReader: FlutterStandardReader {
 
 private class MessagesPigeonCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
-    if let value = value as? RunRequest {
+    if let value = value as? CallbackType {
       super.writeByte(129)
+      super.writeValue(value.rawValue)
+    } else if let value = value as? CallbackConfigMessage {
+      super.writeByte(130)
+      super.writeValue(value.toList())
+    } else if let value = value as? RunRequest {
+      super.writeByte(131)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -218,8 +291,10 @@ class MessagesPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable {
 protocol RedirectHostApi {
   /// Starts a redirect flow and returns the callback URL, or null if cancelled.
   func run(request: RunRequest, completion: @escaping (Result<String?, Error>) -> Void)
-  /// Cancels the current redirect flow.
-  func cancel() throws
+  /// Cancels the redirect flow identified by [nonce].
+  ///
+  /// If [nonce] is empty, cancels all pending operations.
+  func cancel(nonce: String) throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -246,12 +321,16 @@ class RedirectHostApiSetup {
     } else {
       runChannel.setMessageHandler(nil)
     }
-    /// Cancels the current redirect flow.
+    /// Cancels the redirect flow identified by [nonce].
+    ///
+    /// If [nonce] is empty, cancels all pending operations.
     let cancelChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.redirect_darwin.RedirectHostApi.cancel\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      cancelChannel.setMessageHandler { _, reply in
+      cancelChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let nonceArg = args[0] as! String
         do {
-          try api.cancel()
+          try api.cancel(nonce: nonceArg)
           reply(wrapResult(nil))
         } catch {
           reply(wrapError(error))

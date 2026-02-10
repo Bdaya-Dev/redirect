@@ -31,10 +31,17 @@ dependencies:
 ```dart
 import 'package:redirect_io/redirect_io.dart';
 
-final handler = RedirectIo();
+class MyRedirectIo extends RedirectIo {
+  @override
+  ServerRedirectOptions getOptions(RedirectOptions options) {
+    return const ServerRedirectOptions();
+  }
+}
+
+final handler = MyRedirectIo();
 
 final handle = handler.run(
-  url: Uri.parse('https://accounts.google.com/o/oauth2/v2/auth?...'),
+  url: Uri.parse('https://example.com/authorize?...'),
   callbackUrlScheme: 'http',
 );
 
@@ -42,8 +49,7 @@ final result = await handle.result;
 
 switch (result) {
   case RedirectSuccess(:final uri):
-    final code = uri.queryParameters['code'];
-    print('Authorization code: $code');
+    print('Callback URI: $uri');
   case RedirectCancelled():
     print('Cancelled');
   case RedirectFailure(:final error):

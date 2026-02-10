@@ -21,9 +21,9 @@ flutter:
     implements: redirect
     platforms:
       linux:
-        dartPluginClass: RedirectDesktopPlugin
+        dartPluginClass: RedirectLinuxPlugin
       windows:
-        dartPluginClass: RedirectDesktopPlugin
+        dartPluginClass: RedirectWindowsPlugin
 
 dependencies:
   flutter:

@@ -128,6 +128,13 @@ data class AndroidOptions (
  * Generated class from Pigeon that represents data sent in messages.
  */
 data class RunRequest (
+  /**
+   * Unique identifier for this redirect operation.
+   *
+   * Used to correlate the request with its callback, enabling
+   * multiple concurrent redirect flows.
+   */
+  val nonce: String,
   val url: String,
   val callbackUrlScheme: String,
   val preferEphemeral: Boolean,
@@ -137,16 +144,18 @@ data class RunRequest (
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): RunRequest {
-      val url = pigeonVar_list[0] as String
-      val callbackUrlScheme = pigeonVar_list[1] as String
-      val preferEphemeral = pigeonVar_list[2] as Boolean
-      val timeoutMillis = pigeonVar_list[3] as Long?
-      val androidOptions = pigeonVar_list[4] as AndroidOptions
-      return RunRequest(url, callbackUrlScheme, preferEphemeral, timeoutMillis, androidOptions)
+      val nonce = pigeonVar_list[0] as String
+      val url = pigeonVar_list[1] as String
+      val callbackUrlScheme = pigeonVar_list[2] as String
+      val preferEphemeral = pigeonVar_list[3] as Boolean
+      val timeoutMillis = pigeonVar_list[4] as Long?
+      val androidOptions = pigeonVar_list[5] as AndroidOptions
+      return RunRequest(nonce, url, callbackUrlScheme, preferEphemeral, timeoutMillis, androidOptions)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
+      nonce,
       url,
       callbackUrlScheme,
       preferEphemeral,
@@ -205,8 +214,12 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
 interface RedirectHostApi {
   /** Starts a redirect flow and returns the callback URL, or null if cancelled. */
   fun run(request: RunRequest, callback: (Result<String?>) -> Unit)
-  /** Cancels the current redirect flow. */
-  fun cancel()
+  /**
+   * Cancels the redirect flow identified by [nonce].
+   *
+   * If [nonce] is empty, cancels all pending operations.
+   */
+  fun cancel(nonce: String)
 
   companion object {
     /** The codec used by RedirectHostApi. */
@@ -240,9 +253,11 @@ interface RedirectHostApi {
       run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.redirect_android.RedirectHostApi.cancel$separatedMessageChannelSuffix", codec)
         if (api != null) {
-          channel.setMessageHandler { _, reply ->
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val nonceArg = args[0] as String
             val wrapped: List<Any?> = try {
-              api.cancel()
+              api.cancel(nonceArg)
               listOf(null)
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)

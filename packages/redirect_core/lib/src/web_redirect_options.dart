@@ -1,5 +1,13 @@
+import 'dart:async';
+
 import 'package:meta/meta.dart';
 import 'package:redirect_core/redirect_core.dart';
+
+/// Validates whether a URI received on the web BroadcastChannel is the
+/// expected callback.
+///
+/// See [WebRedirectOptions.callbackValidator].
+typedef WebCallbackValidator = FutureOr<bool> Function(Uri uri);
 
 /// Web-specific options for redirect-based flows.
 ///
@@ -8,11 +16,12 @@ import 'package:redirect_core/redirect_core.dart';
 /// ```dart
 /// runRedirect(
 ///   url: authUrl,
-///   callbackUrlScheme: 'myapp',
 ///   options: RedirectOptions(
 ///     platformOptions: {
 ///       WebRedirectOptions.key: WebRedirectOptions(
 ///         mode: WebRedirectMode.newTab,
+///         callbackValidator: (uri) =>
+///             uri.scheme == 'https' && uri.host == 'myapp.example.com',
 ///       ),
 ///     },
 ///   ),
@@ -23,6 +32,7 @@ class WebRedirectOptions {
   /// Creates web redirect options.
   const WebRedirectOptions({
     this.mode = WebRedirectMode.popup,
+    this.callbackValidator,
     this.popupWidth = 500,
     this.popupHeight = 700,
     this.popupLeft,
@@ -52,6 +62,26 @@ class WebRedirectOptions {
   /// Defaults to [WebRedirectMode.popup].
   final WebRedirectMode mode;
 
+  /// Validates whether an incoming callback URI should be accepted.
+  ///
+  /// Called when a message arrives on the BroadcastChannel. Return `true`
+  /// to accept, `false` to ignore.
+  ///
+  /// If null, **all** valid URIs received on the channel are accepted.
+  ///
+  /// Supports both synchronous and asynchronous validation via [FutureOr].
+  ///
+  /// Example:
+  /// ```dart
+  /// WebRedirectOptions(
+  ///   callbackValidator: (uri) =>
+  ///       uri.scheme == 'https' &&
+  ///       uri.host == 'myapp.example.com' &&
+  ///       uri.path == '/callback',
+  /// )
+  /// ```
+  final WebCallbackValidator? callbackValidator;
+
   /// Width of the popup window in pixels.
   ///
   /// Only used when [mode] is [WebRedirectMode.popup].
@@ -77,9 +107,8 @@ class WebRedirectOptions {
   /// Custom name for the BroadcastChannel used for communication.
   ///
   /// By default, each operation generates a unique channel name
-  /// (`redirect_{callbackUrlScheme}_{nonce}`) and stores it in
-  /// `localStorage` so the callback page can auto-discover it via
-  /// `RedirectWeb.handleCallback`.
+  /// (`redirect_{nonce}`) and stores it in `localStorage` so the
+  /// callback page can auto-discover it via `RedirectWeb.handleCallback`.
   ///
   /// Set this explicitly only if you need deterministic channel naming
   /// (e.g., for testing or when coordinating with a custom callback page).
@@ -101,8 +130,8 @@ class WebRedirectOptions {
 
   /// Whether to auto-register the Service Worker when a redirect starts.
   ///
-  /// When true, [RedirectWeb.registerServiceWorker] is invoked during
-  /// `run()`/`runWithWebOptions()` using [callbackPath] if provided.
+  /// When true, `RedirectWeb.registerServiceWorker` is invoked during
+  /// `run()` using [callbackPath] if provided.
   ///
   /// Defaults to false (opt-in) to avoid side effects in apps that manage
   /// their own Service Worker.
@@ -111,6 +140,7 @@ class WebRedirectOptions {
   /// Creates a copy with the given fields replaced.
   WebRedirectOptions copyWith({
     WebRedirectMode? mode,
+    WebCallbackValidator? callbackValidator,
     int? popupWidth,
     int? popupHeight,
     int? popupLeft,
@@ -122,6 +152,7 @@ class WebRedirectOptions {
   }) {
     return WebRedirectOptions(
       mode: mode ?? this.mode,
+      callbackValidator: callbackValidator ?? this.callbackValidator,
       popupWidth: popupWidth ?? this.popupWidth,
       popupHeight: popupHeight ?? this.popupHeight,
       popupLeft: popupLeft ?? this.popupLeft,

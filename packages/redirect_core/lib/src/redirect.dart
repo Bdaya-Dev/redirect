@@ -18,7 +18,6 @@ import 'package:redirect_core/src/redirect_result.dart';
 /// // Synchronous — on web, pre-opens a popup/tab in user-gesture context.
 /// final handle = redirect.run(
 ///   url: Uri.parse('https://example.com/start?callback=myapp://done'),
-///   callbackUrlScheme: 'myapp',
 /// );
 ///
 /// // Await the result separately (won't trigger popup blockers).
@@ -35,7 +34,7 @@ import 'package:redirect_core/src/redirect_result.dart';
 /// ```
 // ignore: one_member_abstracts
 abstract interface class RedirectHandler {
-  /// Opens [url] and waits for a redirect matching [callbackUrlScheme].
+  /// Opens [url] and waits for a redirect callback.
   ///
   /// Returns a [RedirectHandle] **synchronously**. This is important on web,
   /// where the browser window must be opened in the user-gesture call stack
@@ -45,17 +44,19 @@ abstract interface class RedirectHandler {
   /// ## Parameters
   ///
   /// - [url]: The URL to open (e.g., authorization endpoint, payment page)
-  /// - [callbackUrlScheme]: The URL scheme to intercept for the callback
-  /// - [options]: Optional configuration for timeout, ephemeral sessions, etc.
+  /// - [options]: Configuration for timeout, ephemeral sessions, and
+  ///   platform-specific callback matching (see platform option classes).
   ///
-  /// ## Callback Schemes by Platform
+  /// ## Callback Matching by Platform
   ///
-  /// | Platform | Scheme Examples |
-  /// |----------|-----------------|
-  /// | iOS/Android | `myapp` (for `myapp://callback`) |
-  /// | iOS/Android | `https` (for Universal/App Links) |
-  /// | Web | `https` (same-origin redirect) |
-  /// | Desktop | `http` (loopback `http://127.0.0.1:PORT/`) |
+  /// Each platform defines how callbacks are matched in its own options:
+  ///
+  /// | Platform | Option Class | Matching |
+  /// |----------|-------------|----------|
+  /// | iOS/macOS | `DarwinRedirectOptions` | `CallbackConfig` |
+  /// | Android | `AndroidRedirectOptions` | Manifest intent filter |
+  /// | Web | `WebRedirectOptions` | `callbackValidator` |
+  /// | Desktop/IO | `ServerRedirectOptions` | `callbackValidator` |
   ///
   /// ## Error Handling
   ///
@@ -67,7 +68,6 @@ abstract interface class RedirectHandler {
   /// - [RedirectFailure] - An error occurred
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   });
 }

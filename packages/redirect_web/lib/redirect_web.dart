@@ -15,7 +15,7 @@ class RedirectWebPlugin extends RedirectPlatform {
   /// Creates a new web redirect plugin.
   RedirectWebPlugin();
 
-  final core.RedirectWeb _core = core.RedirectWeb();
+  final core.RedirectWeb _core = const core.RedirectWeb();
 
   /// Registers this class as the default instance of [RedirectPlatform].
   static void registerWith([Object? registrar]) {
@@ -25,12 +25,10 @@ class RedirectWebPlugin extends RedirectPlatform {
   @override
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
     return _core.run(
       url: url,
-      callbackUrlScheme: callbackUrlScheme,
       options: options,
     );
   }

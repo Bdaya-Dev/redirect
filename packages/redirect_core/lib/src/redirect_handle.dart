@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
+import 'package:redirect_core/src/nonce.dart';
 import 'package:redirect_core/src/redirect_options.dart';
 import 'package:redirect_core/src/redirect_result.dart';
 
@@ -9,6 +10,9 @@ import 'package:redirect_core/src/redirect_result.dart';
 /// Returned synchronously by `RedirectHandler.run`, allowing the redirect
 /// to be initiated in the user-gesture call stack (important for avoiding
 /// popup blockers on web) while the result is awaited separately.
+///
+/// Each handle has a unique [nonce] that identifies the redirect operation
+/// across Dart and native code, enabling multiple concurrent redirect flows.
 ///
 /// Also exposes the original parameters passed to `RedirectHandler.run`,
 /// so callers can inspect or log them without keeping separate references.
@@ -20,12 +24,13 @@ import 'package:redirect_core/src/redirect_result.dart';
 /// // immediately in the user-gesture context.
 /// final handle = redirect.run(
 ///   url: authUrl,
-///   callbackUrlScheme: 'myapp',
 /// );
 ///
+/// // Each handle has a unique nonce (redirect request ID).
+/// print(handle.nonce); // e.g. 'a3f8b2c1d4e5f6g7'
+///
 /// // Original parameters are available on the handle.
-/// print(handle.url);               // authUrl
-/// print(handle.callbackUrlScheme); // 'myapp'
+/// print(handle.url); // authUrl
 ///
 /// // Now safe to await — the browser window is already open.
 /// final result = await handle.result;
@@ -36,19 +41,28 @@ import 'package:redirect_core/src/redirect_result.dart';
 @immutable
 class RedirectHandle {
   /// Creates a redirect handle.
-  const RedirectHandle({
+  ///
+  /// A unique [nonce] is generated automatically if not provided.
+  /// The nonce serves as the redirect request ID, used to correlate
+  /// the redirect operation across Dart and native code boundaries.
+  RedirectHandle({
     required this.url,
-    required this.callbackUrlScheme,
     required this.result,
     required this.cancel,
+    String? nonce,
     this.options = const RedirectOptions(),
-  });
+  }) : nonce = nonce ?? generateRedirectNonce();
+
+  /// A unique identifier for this redirect operation.
+  ///
+  /// This nonce is used across all platforms to correlate a redirect request
+  /// with its callback. It enables multiple concurrent redirect flows by
+  /// providing a stable identifier that can be passed to native code and
+  /// used for channel naming on web.
+  final String nonce;
 
   /// The URL that was opened for the redirect flow.
   final Uri url;
-
-  /// The URL scheme being intercepted for the callback.
-  final String callbackUrlScheme;
 
   /// The options that were passed to the redirect operation.
   final RedirectOptions options;

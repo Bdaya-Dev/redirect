@@ -28,29 +28,23 @@ void main() {
 
   group('runRedirect', () {
     final testUrl = Uri.parse('https://auth.example.com/authorize');
-    const callbackScheme = 'myapp';
     final successUri = Uri.parse('myapp://callback?code=abc123');
 
     test('delegates to platform instance', () async {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenReturn(
         RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           result: Future.value(RedirectSuccess(uri: successUri)),
           cancel: () async {},
         ),
       );
 
-      final handle = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
+      final handle = runRedirect(url: testUrl);
       final result = await handle.result;
 
       expect(result, isA<RedirectSuccess>());
@@ -59,7 +53,6 @@ void main() {
       verify(
         () => mockPlatform.run(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           options: any(named: 'options'),
         ),
       ).called(1);
@@ -69,13 +62,11 @@ void main() {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenReturn(
         RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           result: Future.value(const RedirectCancelled()),
           cancel: () async {},
         ),
@@ -86,16 +77,11 @@ void main() {
         preferEphemeral: true,
       );
 
-      runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-        options: options,
-      );
+      runRedirect(url: testUrl, options: options);
 
       verify(
         () => mockPlatform.run(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           options: options,
         ),
       ).called(1);
@@ -105,22 +91,17 @@ void main() {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenReturn(
         RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           result: Future.value(const RedirectCancelled()),
           cancel: () async {},
         ),
       );
 
-      final handle = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
+      final handle = runRedirect(url: testUrl);
       final result = await handle.result;
 
       expect(result, isA<RedirectCancelled>());
@@ -131,22 +112,17 @@ void main() {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenReturn(
         RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           result: Future.value(RedirectFailure(error: error)),
           cancel: () async {},
         ),
       );
 
-      final handle = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
+      final handle = runRedirect(url: testUrl);
       final result = await handle.result;
 
       expect(result, isA<RedirectFailure>());
@@ -157,22 +133,17 @@ void main() {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenReturn(
         RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           result: Future.value(const RedirectPending()),
           cancel: () async {},
         ),
       );
 
-      final handle = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
+      final handle = runRedirect(url: testUrl);
       final result = await handle.result;
 
       expect(result, isA<RedirectPending>());
@@ -184,7 +155,6 @@ void main() {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenAnswer((_) {
@@ -192,7 +162,6 @@ void main() {
         final code = 'code_$callCount';
         return RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           result: Future.value(
             RedirectSuccess(
               uri: Uri.parse('myapp://callback?code=$code'),
@@ -202,18 +171,9 @@ void main() {
         );
       });
 
-      final handle1 = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
-      final handle2 = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
-      final handle3 = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
+      final handle1 = runRedirect(url: testUrl);
+      final handle2 = runRedirect(url: testUrl);
+      final handle3 = runRedirect(url: testUrl);
 
       final results = await Future.wait([
         handle1.result,
@@ -236,7 +196,6 @@ void main() {
       verify(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).called(3);
@@ -248,7 +207,6 @@ void main() {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenAnswer((_) {
@@ -257,7 +215,6 @@ void main() {
 
         return RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           result: completer.future,
           cancel: () async {
             cancelled.add(handleIndex);
@@ -268,14 +225,8 @@ void main() {
         );
       });
 
-      final handle1 = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
-      final handle2 = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: callbackScheme,
-      );
+      final handle1 = runRedirect(url: testUrl);
+      final handle2 = runRedirect(url: testUrl);
 
       // Cancel only handle1
       await handle1.cancel();
@@ -291,65 +242,42 @@ void main() {
       expect(result2, isA<RedirectCancelled>());
     });
 
-    test('handles with different schemes work concurrently', () async {
+    test('handles with different platform options work concurrently',
+        () async {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenAnswer((invocation) {
-        final scheme = invocation.namedArguments[#callbackUrlScheme] as String;
         return RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: scheme,
           result: Future.value(
-            RedirectSuccess(
-              uri: Uri.parse('$scheme://callback?ok=true'),
-            ),
+            RedirectSuccess(uri: successUri),
           ),
           cancel: () async {},
         );
       });
 
-      final handleA = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: 'schemea',
-      );
-      final handleB = runRedirect(
-        url: testUrl,
-        callbackUrlScheme: 'schemeb',
-      );
-
-      expect(handleA.callbackUrlScheme, equals('schemea'));
-      expect(handleB.callbackUrlScheme, equals('schemeb'));
+      final handleA = runRedirect(url: testUrl);
+      final handleB = runRedirect(url: testUrl);
 
       final resultA = await handleA.result;
       final resultB = await handleB.result;
 
       expect(resultA, isA<RedirectSuccess>());
       expect(resultB, isA<RedirectSuccess>());
-      expect(
-        (resultA as RedirectSuccess).uri.scheme,
-        equals('schemea'),
-      );
-      expect(
-        (resultB as RedirectSuccess).uri.scheme,
-        equals('schemeb'),
-      );
     });
 
     test('web platform options can be passed', () async {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
-          callbackUrlScheme: any(named: 'callbackUrlScheme'),
           options: any(named: 'options'),
         ),
       ).thenReturn(
         RedirectHandle(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           result: Future.value(RedirectSuccess(uri: successUri)),
           cancel: () async {},
         ),
@@ -357,7 +285,6 @@ void main() {
 
       final handle = runRedirect(
         url: testUrl,
-        callbackUrlScheme: callbackScheme,
         options: const RedirectOptions(
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
@@ -375,7 +302,6 @@ void main() {
       verify(
         () => mockPlatform.run(
           url: testUrl,
-          callbackUrlScheme: callbackScheme,
           options: any(named: 'options'),
         ),
       ).called(1);
@@ -386,7 +312,6 @@ void main() {
     test('exposes all constructor parameters', () {
       final handle = RedirectHandle(
         url: Uri.parse('https://example.com/auth'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           timeout: Duration(seconds: 30),
           preferEphemeral: true,
@@ -396,9 +321,36 @@ void main() {
       );
 
       expect(handle.url, equals(Uri.parse('https://example.com/auth')));
-      expect(handle.callbackUrlScheme, equals('myapp'));
       expect(handle.options.timeout, equals(const Duration(seconds: 30)));
       expect(handle.options.preferEphemeral, isTrue);
+    });
+
+    test('auto-generates a unique nonce', () {
+      final handle1 = RedirectHandle(
+        url: Uri.parse('https://example.com/auth'),
+        result: Future.value(const RedirectCancelled()),
+        cancel: () async {},
+      );
+      final handle2 = RedirectHandle(
+        url: Uri.parse('https://example.com/auth'),
+        result: Future.value(const RedirectCancelled()),
+        cancel: () async {},
+      );
+
+      expect(handle1.nonce, isNotEmpty);
+      expect(handle2.nonce, isNotEmpty);
+      expect(handle1.nonce, isNot(equals(handle2.nonce)));
+    });
+
+    test('accepts an explicit nonce', () {
+      final handle = RedirectHandle(
+        url: Uri.parse('https://example.com/auth'),
+        nonce: 'my-custom-nonce',
+        result: Future.value(const RedirectCancelled()),
+        cancel: () async {},
+      );
+
+      expect(handle.nonce, equals('my-custom-nonce'));
     });
 
     test('cancel completes result with RedirectCancelled', () async {
@@ -406,7 +358,6 @@ void main() {
 
       final handle = RedirectHandle(
         url: Uri.parse('https://example.com/auth'),
-        callbackUrlScheme: 'myapp',
         result: completer.future,
         cancel: () async {
           if (!completer.isCompleted) {
@@ -426,7 +377,6 @@ void main() {
 
       final handle = RedirectHandle(
         url: Uri.parse('https://example.com/auth'),
-        callbackUrlScheme: 'myapp',
         result: completer.future,
         cancel: () async {
           cancelCount++;

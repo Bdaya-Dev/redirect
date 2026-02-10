@@ -9,17 +9,23 @@
 /// ```dart
 /// import 'package:redirect_io/redirect_io.dart';
 ///
+/// class MyRedirectIo extends RedirectIo {
+///   @override
+///   ServerRedirectOptions getOptions(RedirectOptions options) {
+///     return const ServerRedirectOptions();
+///   }
+/// }
+///
 /// void main() async {
-///   final redirect = RedirectIo();
+///   final redirect = MyRedirectIo();
 ///
 ///   final result = await redirect.run(
 ///     url: Uri.parse('https://auth.example.com/authorize?client_id=...'),
-///     callbackUrlScheme: 'myapp',
-///   );
+///   ).result;
 ///
 ///   switch (result) {
 ///     case RedirectSuccess(:final uri):
-///       print('Got token: ${uri.queryParameters['code']}');
+///       print('Got callback: ${uri}');
 ///     case RedirectCancelled():
 ///       print('Cancelled');
 ///     case RedirectPending():
@@ -33,23 +39,31 @@
 /// ## How it works
 ///
 /// 1. Starts a local HTTP server on a specified port (or auto-selects one)
-/// 2. Opens the system browser with the authorization URL
-/// 3. Waits for the provider to redirect back to the local server
+/// 2. Opens the system browser with the redirect URL
+/// 3. Waits for the target to redirect back to the local server
 /// 4. Returns the callback URI containing the response
 ///
 /// ## Customization
 ///
+/// Override `RedirectIo.getOptions` to control per-redirect configuration:
+///
 /// ```dart
-/// final redirect = RedirectIo(
-///   ioOptions: IoRedirectOptions(
-///     callbackUrl: Uri.parse('http://localhost:8080/callback'),
-///     successHtml: '<html>Success! You can close this tab.</html>',
-///     errorHtml: '<html>Error occurred.</html>',
-///   ),
-/// );
+/// class CustomRedirectIo extends RedirectIo {
+///   @override
+///   ServerRedirectOptions getOptions(RedirectOptions options) {
+///     return ServerRedirectOptions(
+///       callbackUrl: Uri.parse('http://localhost:8080/callback'),
+///       httpResponseBuilder: (request) {
+///         return HttpCallbackResponse(
+///           statusCode: 200,
+///           body: '<html>Done! You can close this tab.</html>',
+///         );
+///       },
+///     );
+///   }
+/// }
 /// ```
 library;
 
 export 'package:redirect_core/redirect_core.dart';
-export 'src/io_redirect_options.dart';
 export 'src/redirect_io.dart';

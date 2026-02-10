@@ -4,7 +4,10 @@ import 'package:redirect_core/redirect_core.dart';
 export 'package:redirect_core/redirect_core.dart';
 export 'src/android_redirect_options.dart';
 export 'src/darwin_redirect_options.dart';
-export 'src/desktop_redirect_options.dart';
+export 'src/ios_redirect_options.dart';
+export 'src/linux_redirect_options.dart';
+export 'src/macos_redirect_options.dart';
+export 'src/windows_redirect_options.dart';
 
 /// {@template redirect_platform}
 /// The interface that implementations of redirect must implement.
@@ -54,7 +57,6 @@ abstract class RedirectPlatform extends PlatformInterface
   @override
   RedirectHandle run({
     required Uri url,
-    required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
     throw UnimplementedError('run() has not been implemented.');

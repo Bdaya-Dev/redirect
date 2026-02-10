@@ -11,7 +11,6 @@
 /// final redirect = RedirectWeb();
 /// final handle = redirect.run(
 ///   url: Uri.parse('https://example.com/authorize'),
-///   callbackUrlScheme: 'myapp',
 /// );
 /// final result = await handle.result;
 /// ```
@@ -20,22 +19,28 @@
 ///
 /// ```dart
 /// // Open in a popup window
-/// final handle = redirect.runWithWebOptions(
+/// final handle = redirect.run(
 ///   url: authUrl,
-///   callbackUrlScheme: 'myapp',
-///   webOptions: WebRedirectOptions(
-///     mode: WebRedirectMode.popup,
-///     popupWidth: 600,
-///     popupHeight: 800,
+///   options: RedirectOptions(
+///     platformOptions: {
+///       WebRedirectOptions.key: WebRedirectOptions(
+///         mode: WebRedirectMode.popup,
+///         popupWidth: 600,
+///         popupHeight: 800,
+///       ),
+///     },
 ///   ),
 /// );
 ///
 /// // Open in a new tab
-/// final handle = redirect.runWithWebOptions(
+/// final handle = redirect.run(
 ///   url: authUrl,
-///   callbackUrlScheme: 'myapp',
-///   webOptions: WebRedirectOptions(
-///     mode: WebRedirectMode.newTab,
+///   options: RedirectOptions(
+///     platformOptions: {
+///       WebRedirectOptions.key: WebRedirectOptions(
+///         mode: WebRedirectMode.newTab,
+///       ),
+///     },
 ///   ),
 /// );
 /// ```

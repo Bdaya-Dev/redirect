@@ -114,7 +114,6 @@ class _HomePageState extends State<HomePage> {
     try {
       final handle = runRedirect(
         url: url,
-        callbackUrlScheme: scheme,
         options: RedirectOptions(
           timeout: Duration(seconds: _timeoutSeconds),
           preferEphemeral: _preferEphemeral,
@@ -143,7 +142,6 @@ class _HomePageState extends State<HomePage> {
       final failEntry = _HandleEntry(
         handle: RedirectHandle(
           url: url,
-          callbackUrlScheme: scheme,
           result: Future.value(
             RedirectFailure(error: e, stackTrace: StackTrace.current),
           ),

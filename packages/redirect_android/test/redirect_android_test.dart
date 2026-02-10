@@ -17,6 +17,7 @@ class FakeRedirectHostApi implements RedirectHostApi {
 
   RunRequest? lastRunRequest;
   bool cancelCalled = false;
+  String? lastCancelledNonce;
 
   String? runResult = 'myapp://callback?code=abc123';
   PlatformException? runException;
@@ -29,13 +30,23 @@ class FakeRedirectHostApi implements RedirectHostApi {
   }
 
   @override
-  Future<void> cancel() async {
+  Future<void> cancel(String nonce) async {
     cancelCalled = true;
+    lastCancelledNonce = nonce;
   }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  /// Default options with Android callbackUrlScheme for tests.
+  const defaultAndroidOptions = RedirectOptions(
+    platformOptions: {
+      AndroidRedirectOptions.key: AndroidRedirectOptions(
+        callbackUrlScheme: 'myapp',
+      ),
+    },
+  );
 
   group('RedirectAndroidPlugin', () {
     late RedirectAndroidPlugin redirect;
@@ -55,11 +66,12 @@ void main() {
       final url = Uri.parse('https://auth.example.com/authorize');
       final handle = redirect.run(
         url: url,
-        callbackUrlScheme: 'myapp',
+        options: defaultAndroidOptions,
       );
       await handle.result;
 
       final req = fakeApi.lastRunRequest!;
+      expect(req.nonce, equals(handle.nonce));
       expect(req.url, equals(url.toString()));
       expect(req.callbackUrlScheme, equals('myapp'));
       expect(req.preferEphemeral, isFalse);
@@ -71,8 +83,7 @@ void main() {
     test('run passes preferEphemeral option', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(preferEphemeral: true),
+        options: defaultAndroidOptions.copyWith(preferEphemeral: true),
       );
       await handle.result;
 
@@ -82,8 +93,9 @@ void main() {
     test('run passes timeout option', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
-        options: const RedirectOptions(timeout: Duration(seconds: 30)),
+        options: defaultAndroidOptions.copyWith(
+          timeout: const Duration(seconds: 30),
+        ),
       );
       await handle.result;
 
@@ -93,7 +105,7 @@ void main() {
     test('run sends default androidOptions', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: defaultAndroidOptions,
       );
       await handle.result;
 
@@ -107,6 +119,7 @@ void main() {
 
     test('run sends custom androidOptions via platformOptions', () async {
       const androidOpts = AndroidRedirectOptions(
+        callbackUrlScheme: 'myapp',
         useCustomTabs: false,
         showTitle: true,
         enableUrlBarHiding: true,
@@ -116,7 +129,6 @@ void main() {
 
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           platformOptions: {AndroidRedirectOptions.key: androidOpts},
         ),
@@ -134,7 +146,7 @@ void main() {
     test('run returns RedirectSuccess on valid result', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: defaultAndroidOptions,
       );
       final result = await handle.result;
 
@@ -150,7 +162,7 @@ void main() {
 
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: defaultAndroidOptions,
       );
       final result = await handle.result;
 
@@ -164,7 +176,7 @@ void main() {
 
         final handle = redirect.run(
           url: Uri.parse('https://auth.example.com/authorize'),
-          callbackUrlScheme: 'myapp',
+          options: defaultAndroidOptions,
         );
         final result = await handle.result;
 
@@ -180,7 +192,7 @@ void main() {
 
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: defaultAndroidOptions,
       );
       final result = await handle.result;
 
@@ -191,21 +203,23 @@ void main() {
       );
     });
 
-    test('cancel calls the api', () async {
+    test('cancel calls the api with correct nonce', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        callbackUrlScheme: 'myapp',
+        options: defaultAndroidOptions,
       );
       await handle.cancel();
 
       expect(fakeApi.cancelCalled, isTrue);
+      expect(fakeApi.lastCancelledNonce, equals(handle.nonce));
     });
   });
 
   group('AndroidRedirectOptions', () {
     test('default values are correct', () {
-      const options = AndroidRedirectOptions();
+      const options = AndroidRedirectOptions(callbackUrlScheme: 'myapp');
 
+      expect(options.callbackUrlScheme, equals('myapp'));
       expect(options.useCustomTabs, isTrue);
       expect(options.showTitle, isFalse);
       expect(options.enableUrlBarHiding, isFalse);
@@ -215,6 +229,7 @@ void main() {
 
     test('custom values are stored correctly', () {
       const options = AndroidRedirectOptions(
+        callbackUrlScheme: 'myapp',
         useCustomTabs: false,
         showTitle: true,
         enableUrlBarHiding: true,
@@ -230,7 +245,10 @@ void main() {
     });
 
     test('fromOptions extracts android options from platformOptions', () {
-      const androidOpts = AndroidRedirectOptions(showTitle: true);
+      const androidOpts = AndroidRedirectOptions(
+        callbackUrlScheme: 'myapp',
+        showTitle: true,
+      );
       const options = RedirectOptions(
         platformOptions: {AndroidRedirectOptions.key: androidOpts},
       );
@@ -242,20 +260,23 @@ void main() {
 
     test('fromOptions returns fallback when not present', () {
       const options = RedirectOptions();
-      const fallback = AndroidRedirectOptions(showTitle: true);
+      const fallback = AndroidRedirectOptions(
+        callbackUrlScheme: 'myapp',
+        showTitle: true,
+      );
 
       final extracted = AndroidRedirectOptions.fromOptions(options, fallback);
 
       expect(extracted.showTitle, isTrue);
     });
 
-    test('fromOptions returns default when no fallback and not present', () {
+    test('fromOptions throws when not present and no fallback', () {
       const options = RedirectOptions();
 
-      final extracted = AndroidRedirectOptions.fromOptions(options);
-
-      expect(extracted.useCustomTabs, isTrue);
-      expect(extracted.showTitle, isFalse);
+      expect(
+        () => AndroidRedirectOptions.fromOptions(options),
+        throwsA(isA<StateError>()),
+      );
     });
 
     test('key is android', () {
