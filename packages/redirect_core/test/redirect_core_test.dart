@@ -161,4 +161,94 @@ void main() {
       );
     });
   });
+
+  group('WebRedirectOptions', () {
+    test('default values are correct', () {
+      const options = WebRedirectOptions();
+
+      expect(options.mode, equals(WebRedirectMode.popup));
+      expect(options.popupWidth, equals(500));
+      expect(options.popupHeight, equals(700));
+      expect(options.popupLeft, isNull);
+      expect(options.popupTop, isNull);
+      expect(options.broadcastChannelName, isNull);
+      expect(options.iframeId, isNull);
+      expect(options.autoRegisterServiceWorker, isFalse);
+    });
+
+    test('custom values are stored correctly', () {
+      const options = WebRedirectOptions(
+        mode: WebRedirectMode.newTab,
+        popupWidth: 400,
+        popupHeight: 500,
+        popupLeft: 100,
+        popupTop: 200,
+        broadcastChannelName: 'test_channel',
+        iframeId: 'test_iframe',
+      );
+
+      expect(options.mode, equals(WebRedirectMode.newTab));
+      expect(options.popupWidth, equals(400));
+      expect(options.popupHeight, equals(500));
+      expect(options.popupLeft, equals(100));
+      expect(options.popupTop, equals(200));
+      expect(options.broadcastChannelName, equals('test_channel'));
+      expect(options.iframeId, equals('test_iframe'));
+    });
+
+    test('fromOptions extracts web options from platformOptions', () {
+      const webOpts = WebRedirectOptions(mode: WebRedirectMode.hiddenIframe);
+      const options = RedirectOptions(
+        platformOptions: {WebRedirectOptions.key: webOpts},
+      );
+
+      final extracted = WebRedirectOptions.fromOptions(options);
+
+      expect(extracted.mode, equals(WebRedirectMode.hiddenIframe));
+    });
+
+    test('fromOptions returns fallback when not present', () {
+      const options = RedirectOptions();
+      const fallback = WebRedirectOptions(mode: WebRedirectMode.samePage);
+
+      final extracted = WebRedirectOptions.fromOptions(options, fallback);
+
+      expect(extracted.mode, equals(WebRedirectMode.samePage));
+    });
+
+    test('fromOptions returns default when no fallback and not present', () {
+      const options = RedirectOptions();
+
+      final extracted = WebRedirectOptions.fromOptions(options);
+
+      expect(extracted.mode, equals(WebRedirectMode.popup));
+    });
+
+    test('copyWith updates autoRegisterServiceWorker', () {
+      const options = WebRedirectOptions();
+      final updated = options.copyWith(autoRegisterServiceWorker: true);
+
+      expect(updated.autoRegisterServiceWorker, isTrue);
+      expect(options.autoRegisterServiceWorker, isFalse);
+    });
+  });
+
+  group('WebRedirectMode', () {
+    test('has all expected values', () {
+      expect(
+        WebRedirectMode.values,
+        containsAll([
+          WebRedirectMode.popup,
+          WebRedirectMode.newTab,
+          WebRedirectMode.samePage,
+          WebRedirectMode.hiddenIframe,
+        ]),
+      );
+    });
+
+    test('each value has a distinct index', () {
+      final indices = WebRedirectMode.values.map((v) => v.index).toSet();
+      expect(indices.length, equals(WebRedirectMode.values.length));
+    });
+  });
 }

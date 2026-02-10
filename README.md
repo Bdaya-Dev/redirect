@@ -54,7 +54,7 @@ switch (result) {
 | Linux | `redirect_desktop` | Loopback HTTP server + system browser |
 | Windows | `redirect_desktop` | Loopback HTTP server + system browser |
 | Web | `redirect_web` | Popup / New tab / Same-page / Hidden iframe |
-| CLI (Dart) | `redirect_cli` | Loopback HTTP server + system browser |
+| CLI (Dart) | `redirect_io` | Loopback HTTP server + system browser |
 
 ## Packages
 
@@ -70,7 +70,7 @@ This is a federated plugin. Pick the package that fits your use case:
 | [`redirect_desktop`](packages/redirect_desktop/) | [![pub](https://img.shields.io/pub/v/redirect_desktop.svg)](https://pub.dev/packages/redirect_desktop) | Linux & Windows implementation |
 | [`redirect_web`](packages/redirect_web/) | [![pub](https://img.shields.io/pub/v/redirect_web.svg)](https://pub.dev/packages/redirect_web) | Flutter web implementation |
 | [`redirect_web_core`](packages/redirect_web_core/) | [![pub](https://img.shields.io/pub/v/redirect_web_core.svg)](https://pub.dev/packages/redirect_web_core) | Pure Dart web implementation (no Flutter dependency) |
-| [`redirect_cli`](packages/redirect_cli/) | [![pub](https://img.shields.io/pub/v/redirect_cli.svg)](https://pub.dev/packages/redirect_cli) | Pure Dart CLI implementation |
+| [`redirect_io`](packages/redirect_io/) | [![pub](https://img.shields.io/pub/v/redirect_io.svg)](https://pub.dev/packages/redirect_io) | Pure Dart IO implementation |
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ Platform packages are [endorsed](https://docs.flutter.dev/packages-and-plugins/d
 
 ```yaml
 dependencies:
-  redirect_cli: ^0.1.0
+  redirect_io: ^0.1.0
 ```
 
 ### Pure Dart (Web)
@@ -97,6 +97,12 @@ dependencies:
 dependencies:
   redirect_web_core: ^0.1.0
 ```
+
+### Web Setup
+
+Web requires a Service Worker to relay the callback URL.
+Run `dart run redirect_web_core:setup` and set `autoRegisterServiceWorker: true`
+in your `WebRedirectOptions`. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Key Concepts
 
@@ -138,23 +144,11 @@ See [Use Cases](docs/USE_CASES.md) for detailed platform-specific examples inclu
 
 ## Contributing
 
-Contributions are welcome! Please file issues and pull requests on the [GitHub repository](https://github.com/Bdaya-Dev/redirect).
+Contributions are welcome! Please file issues and pull requests on the
+[GitHub repository](https://github.com/Bdaya-Dev/redirect).
 
-This project uses [Melos](https://melos.invertase.dev/) to manage the monorepo. Common commands:
-
-```bash
-# Bootstrap all packages
-dart run melos bootstrap
-
-# Run all tests
-dart run melos run test
-
-# Analyze all packages
-dart run melos run analyze
-
-# Format all packages
-dart run melos run format
-```
+Developer setup and workflows are documented in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

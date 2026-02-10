@@ -33,6 +33,12 @@ dependencies:
 
 For **non-Flutter** Dart web apps, use [`redirect_web_core`](https://pub.dev/packages/redirect_web_core) directly.
 
+## Web Setup
+
+Run `dart run redirect_web_core:setup` to copy the Service Worker and callback
+page to your `web/` directory. Then set `autoRegisterServiceWorker: true` in
+your `WebRedirectOptions`. See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
+
 ## License
 
 MIT — see [LICENSE](https://github.com/Bdaya-Dev/redirect/blob/main/LICENSE).

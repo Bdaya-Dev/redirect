@@ -4,13 +4,13 @@
   </a>
 </p>
 
-# redirect_cli
+# redirect_io
 
-[![pub](https://img.shields.io/pub/v/redirect_cli.svg)](https://pub.dev/packages/redirect_cli)
+[![pub](https://img.shields.io/pub/v/redirect_io.svg)](https://pub.dev/packages/redirect_io)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
 
-Pure Dart CLI implementation of redirect-based flows. Ideal for **command-line tools**, **servers**, and **non-Flutter** Dart applications.
+Pure Dart IO implementation of redirect-based flows. Ideal for **command-line tools**, **servers**, **desktop apps**, and **non-Flutter** Dart applications.
 
 ## How it works
 
@@ -23,15 +23,15 @@ Pure Dart CLI implementation of redirect-based flows. Ideal for **command-line t
 
 ```yaml
 dependencies:
-  redirect_cli: ^0.1.0
+  redirect_io: ^0.1.0
 ```
 
 ## Usage
 
 ```dart
-import 'package:redirect_cli/redirect_cli.dart';
+import 'package:redirect_io/redirect_io.dart';
 
-final handler = RedirectCli();
+final handler = RedirectIo();
 
 final handle = handler.run(
   url: Uri.parse('https://accounts.google.com/o/oauth2/v2/auth?...'),

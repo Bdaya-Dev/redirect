@@ -30,6 +30,7 @@ class WebRedirectOptions {
     this.broadcastChannelName,
     this.iframeId,
     this.callbackPath,
+    this.autoRegisterServiceWorker = false,
   });
 
   /// The key used in [RedirectOptions.platformOptions] for web options.
@@ -98,6 +99,15 @@ class WebRedirectOptions {
   /// Has no effect when the Service Worker is not registered.
   final String? callbackPath;
 
+  /// Whether to auto-register the Service Worker when a redirect starts.
+  ///
+  /// When true, [RedirectWeb.registerServiceWorker] is invoked during
+  /// `run()`/`runWithWebOptions()` using [callbackPath] if provided.
+  ///
+  /// Defaults to false (opt-in) to avoid side effects in apps that manage
+  /// their own Service Worker.
+  final bool autoRegisterServiceWorker;
+
   /// Creates a copy with the given fields replaced.
   WebRedirectOptions copyWith({
     WebRedirectMode? mode,
@@ -108,6 +118,7 @@ class WebRedirectOptions {
     String? broadcastChannelName,
     String? iframeId,
     String? callbackPath,
+    bool? autoRegisterServiceWorker,
   }) {
     return WebRedirectOptions(
       mode: mode ?? this.mode,
@@ -118,6 +129,8 @@ class WebRedirectOptions {
       broadcastChannelName: broadcastChannelName ?? this.broadcastChannelName,
       iframeId: iframeId ?? this.iframeId,
       callbackPath: callbackPath ?? this.callbackPath,
+      autoRegisterServiceWorker:
+          autoRegisterServiceWorker ?? this.autoRegisterServiceWorker,
     );
   }
 }

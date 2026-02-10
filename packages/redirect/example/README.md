@@ -61,7 +61,7 @@ When running on web, additional options are available:
 The example uses httpbin.org to simulate a redirect (OAuth is a common use case):
 
 - **Desktop/Mobile**: Redirects to `myapp://callback?code=test123`
-- **Web**: Redirects to `callback.html` which sends the result via BroadcastChannel
+- **Web**: Redirects to `callback.html`; the Service Worker broadcasts the result
 
 ## Platform Configuration
 
@@ -71,4 +71,4 @@ The `myapp://` custom URL scheme is pre-configured:
 - **iOS**: [Info.plist](ios/Runner/Info.plist) (`CFBundleURLTypes`)
 - **macOS**: [Info.plist](macos/Runner/Info.plist) (`CFBundleURLTypes`)
 - **Windows/Linux**: Uses loopback HTTP server (no URL scheme needed)
-- **Web**: Uses [callback.html](web/callback.html) with BroadcastChannel
+- **Web**: Uses [callback.html](web/callback.html) and the Service Worker

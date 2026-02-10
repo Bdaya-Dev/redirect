@@ -78,6 +78,22 @@ public class RedirectPlugin: NSObject, FlutterPlugin, RedirectHostApi,
         session?.prefersEphemeralWebBrowserSession = request.preferEphemeral
         session?.presentationContextProvider = self
         
+        // Set additional header fields if provided (iOS 17.4+ / macOS 14.4+)
+        if let headers = request.additionalHeaderFields {
+            if #available(iOS 17.4, macOS 14.4, *) {
+                // Filter out nil keys/values from Pigeon's [String?: String?]?
+                var validHeaders: [String: String] = [:]
+                for (key, value) in headers {
+                    if let key = key, let value = value {
+                        validHeaders[key] = value
+                    }
+                }
+                if !validHeaders.isEmpty {
+                    session?.additionalHeaderFields = validHeaders
+                }
+            }
+        }
+        
         // Schedule timeout if specified
         if let timeoutMillis = request.timeoutMillis {
             let workItem = DispatchWorkItem { [weak self] in

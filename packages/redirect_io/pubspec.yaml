@@ -1,12 +1,12 @@
-name: redirect_cli
+name: redirect_io
 description: >-
-  Pure Dart CLI implementation of redirect-based flows.
-  Ideal for command-line tools, servers, and non-Flutter Dart applications.
+  Pure Dart IO implementation of redirect-based flows.
+  Ideal for command-line tools, servers, desktop apps, and non-Flutter Dart applications.
 version: 0.1.0
-repository: https://github.com/Bdaya-Dev/redirect/tree/main/packages/redirect_cli
+repository: https://github.com/Bdaya-Dev/redirect/tree/main/packages/redirect_io
 topics:
   - redirect
-  - cli
+  - io
   - dart
   - deep-links
   - callback

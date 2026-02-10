@@ -5,7 +5,8 @@ library;
 //
 // Demonstrates how redirect_web_core integrates with Jaspr — a pure Dart
 // web framework. Uses jaspr_test's `testComponents` to verify component
-// rendering and interaction with all redirect result types.
+// rendering and interaction with all redirect result types, and
+// `testServer` (from `server_test.dart`) to verify SSR output.
 //
 // The component accepts a `RedirectHandler` (from redirect_core), making it
 // testable with a mock handler in jaspr_test's simulated environment.
@@ -18,6 +19,7 @@ library;
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_test/jaspr_test.dart';
+import 'package:jaspr_test/server_test.dart';
 import 'package:redirect_core/redirect_core.dart';
 
 // ─────────────────────────────────────────────────
@@ -382,6 +384,107 @@ void main() {
               '${result.runtimeType}',
         );
       }
+    });
+  });
+
+  // ─────────────────────────────────────────────────
+  // SSR tests using testServer
+  // ─────────────────────────────────────────────────
+
+  group('RedirectDemo SSR (testServer) >', () {
+    testServer('renders valid HTML with idle state', (tester) async {
+      tester.pumpComponent(
+        RedirectDemo(
+          handler: _MockRedirectHandler(),
+          redirectUrl: Uri.parse('https://example.com/auth'),
+        ),
+      );
+
+      final response = await tester.request('/');
+
+      expect(response.statusCode, equals(200));
+      expect(response.body, contains('Status: idle'));
+    });
+
+    testServer('renders both buttons in SSR output', (tester) async {
+      tester.pumpComponent(
+        RedirectDemo(
+          handler: _MockRedirectHandler(),
+          redirectUrl: Uri.parse('https://example.com/auth'),
+        ),
+      );
+
+      final response = await tester.request('/');
+
+      expect(response.statusCode, equals(200));
+      expect(response.body, contains('Start Redirect'));
+      expect(response.body, contains('Cancel'));
+    });
+
+    testServer('renders #redirect-demo container div', (tester) async {
+      tester.pumpComponent(
+        RedirectDemo(
+          handler: _MockRedirectHandler(),
+          redirectUrl: Uri.parse('https://example.com/auth'),
+        ),
+      );
+
+      final response = await tester.request('/');
+
+      expect(response.statusCode, equals(200));
+      expect(response.body, contains('id="redirect-demo"'));
+    });
+
+    testServer('does not render detail paragraph when empty', (tester) async {
+      tester.pumpComponent(
+        RedirectDemo(
+          handler: _MockRedirectHandler(),
+          redirectUrl: Uri.parse('https://example.com/auth'),
+        ),
+      );
+
+      final response = await tester.request('/');
+
+      expect(response.statusCode, equals(200));
+      // The detail paragraph should NOT appear since _detail is empty in
+      // the idle state (guarded by `if (_detail.isNotEmpty)`).
+      expect(response.body, contains('Status: idle'));
+      expect(response.body, isNot(contains('Detail:')));
+    });
+
+    testServer('contains exactly two button elements', (tester) async {
+      tester.pumpComponent(
+        RedirectDemo(
+          handler: _MockRedirectHandler(),
+          redirectUrl: Uri.parse('https://example.com/auth'),
+        ),
+      );
+
+      final response = await tester.request('/');
+
+      expect(response.statusCode, equals(200));
+
+      final body = response.body;
+      // Count <button> occurrences — expect exactly 2
+      // (Start Redirect + Cancel).
+      final buttonPattern = RegExp(r'<button\b');
+      final matches = buttonPattern.allMatches(body).length;
+      expect(matches, equals(2));
+    });
+
+    testServer('button elements have correct IDs', (tester) async {
+      tester.pumpComponent(
+        RedirectDemo(
+          handler: _MockRedirectHandler(),
+          redirectUrl: Uri.parse('https://example.com/auth'),
+        ),
+      );
+
+      final response = await tester.request('/');
+
+      expect(response.statusCode, equals(200));
+      expect(response.body, contains('id="start-btn"'));
+      expect(response.body, contains('id="cancel-btn"'));
     });
   });
 }

@@ -31,12 +31,15 @@ class RedirectDarwinPlugin extends RedirectPlatform {
   }) {
     Future<RedirectResult> doRun() async {
       try {
+        final darwinOptions = DarwinRedirectOptions.fromOptions(options);
         final result = await _api.run(
           RunRequest(
             url: url.toString(),
             callbackUrlScheme: callbackUrlScheme,
             preferEphemeral: options.preferEphemeral,
             timeoutMillis: options.timeout?.inMilliseconds,
+            additionalHeaderFields:
+                darwinOptions.additionalHeaderFields,
           ),
         );
 

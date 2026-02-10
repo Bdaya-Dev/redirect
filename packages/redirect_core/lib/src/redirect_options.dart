@@ -40,7 +40,7 @@ class RedirectOptions {
   ///
   /// Platform packages define their own option types and keys:
   /// - **Web**: `WebRedirectOptions` via `WebRedirectOptions.key`
-  /// - **CLI**: `CliRedirectOptions` via `CliRedirectOptions.key`
+  /// - **IO**: `IoRedirectOptions` via `IoRedirectOptions.key`
   ///
   /// Example:
   /// ```dart

@@ -33,7 +33,7 @@ dependencies:
 ```dart
 import 'package:redirect_web_core/redirect_web_core.dart';
 
-final handler = RedirectWebCore();
+final handler = RedirectWeb();
 
 final handle = handler.run(
   url: Uri.parse('https://auth.example.com/authorize?...'),
@@ -42,8 +42,8 @@ final handle = handler.run(
     platformOptions: {
       WebRedirectOptions.key: WebRedirectOptions(
         mode: WebRedirectMode.popup,
-        popupWidth: 500,
-        popupHeight: 700,
+        callbackPath: '/callback.html',
+        autoRegisterServiceWorker: true,
       ),
     },
   ),
@@ -51,6 +51,12 @@ final handle = handler.run(
 
 final result = await handle.result;
 ```
+
+## Web Setup
+
+Run `dart run redirect_web_core:setup` to copy the Service Worker and callback
+page to your `web/` directory. Then set `autoRegisterServiceWorker: true` in
+your `WebRedirectOptions`. See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
 
 > **Note:** If you're using Flutter, use [`redirect`](https://pub.dev/packages/redirect) instead — it automatically delegates to this package on web.
 

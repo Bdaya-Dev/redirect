@@ -1,8 +1,10 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:redirect_core/redirect_core.dart';
-import 'package:redirect_platform_interface/src/method_channel_redirect.dart';
 
 export 'package:redirect_core/redirect_core.dart';
+export 'src/android_redirect_options.dart';
+export 'src/darwin_redirect_options.dart';
+export 'src/desktop_redirect_options.dart';
 
 /// {@template redirect_platform}
 /// The interface that implementations of redirect must implement.
@@ -21,12 +23,26 @@ abstract class RedirectPlatform extends PlatformInterface
 
   static final Object _token = Object();
 
-  static RedirectPlatform _instance = MethodChannelRedirect();
+  static RedirectPlatform? _instance;
 
   /// The default instance of [RedirectPlatform] to use.
   ///
-  /// Defaults to [MethodChannelRedirect].
-  static RedirectPlatform get instance => _instance;
+  /// Platform-specific packages register their implementations at startup,
+  /// replacing this value.
+  ///
+  /// Throws [StateError] if no platform implementation has been registered.
+  static RedirectPlatform get instance {
+    final instance = _instance;
+    if (instance == null) {
+      throw StateError(
+        'No RedirectPlatform implementation has been registered. '
+        'Ensure a platform package (redirect_android, redirect_darwin, '
+        'redirect_desktop, or redirect_web) is included in your '
+        'dependencies.',
+      );
+    }
+    return instance;
+  }
 
   /// Platform-specific plugins should set this with their own platform-specific
   /// class that extends [RedirectPlatform] when they register themselves.

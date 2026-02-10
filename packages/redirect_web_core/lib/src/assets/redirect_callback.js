@@ -47,19 +47,6 @@
     }
   }
 
-  // --- Fallback: postMessage to opener ---
-
-  if (window.opener) {
-    try {
-      window.opener.postMessage(
-        { type: 'redirect_callback', url: callbackUrl },
-        '*'
-      );
-    } catch (_) {
-      // Cross-origin or opener already closed
-    }
-  }
-
   // --- Auto-close after a short delay ---
 
   setTimeout(function () {

@@ -30,7 +30,7 @@ Core types and interfaces for the [redirect](https://pub.dev/packages/redirect) 
 - You're writing code that is **platform-agnostic** and just needs the type definitions.
 
 If you're building a Flutter app, use [`redirect`](https://pub.dev/packages/redirect) instead.
-If you're building a CLI tool, use [`redirect_cli`](https://pub.dev/packages/redirect_cli).
+If you're building a CLI tool, use [`redirect_io`](https://pub.dev/packages/redirect_io).
 
 ## Installation
 

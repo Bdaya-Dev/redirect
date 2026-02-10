@@ -6,6 +6,19 @@ import 'dart:math';
 import 'package:redirect_core/redirect_core.dart';
 import 'package:web/web.dart' as web;
 
+/// Typed message sent to the Service Worker via `postMessage`.
+///
+/// Using an object literal constructor avoids the runtime overhead (and lack
+/// of type safety) of `Map.jsify()`.  Each call produces a plain JS object
+/// whose shape matches what `redirect_sw.js` expects.
+extension type _ServiceWorkerMessage._(JSObject _) implements JSObject {
+  external factory _ServiceWorkerMessage({
+    required String type,
+    String channel,
+    String callbackPath,
+  });
+}
+
 /// Pure Dart web implementation of [RedirectHandler].
 ///
 /// Supports multiple redirect modes: popup, new tab, same-page, and iframe.
@@ -24,33 +37,25 @@ import 'package:web/web.dart' as web;
 ///
 /// ## Custom Web Options
 ///
-/// ```dart
-/// final redirect = RedirectWeb(
-///   defaultWebOptions: WebRedirectOptions(mode: WebRedirectMode.newTab),
-/// );
-/// ```
-///
-/// Or per-call:
+/// Pass [WebRedirectOptions] per-call via [RedirectOptions.platformOptions]:
 ///
 /// ```dart
-/// final handle = redirect.runWithWebOptions(
+/// final handle = redirect.run(
 ///   url: Uri.parse('https://auth.example.com/authorize'),
 ///   callbackUrlScheme: 'https',
-///   webOptions: WebRedirectOptions(mode: WebRedirectMode.samePage),
+///   options: RedirectOptions(
+///     platformOptions: {
+///       WebRedirectOptions.key: WebRedirectOptions(
+///         mode: WebRedirectMode.newTab,
+///       ),
+///     },
+///   ),
 /// );
 /// final result = await handle.result;
 /// ```
 class RedirectWeb implements RedirectHandler {
   /// Creates a new web redirect handler.
-  ///
-  /// [defaultWebOptions] specifies the default web-specific options used when
-  /// calling [run]. Defaults to popup mode.
-  RedirectWeb({
-    this.defaultWebOptions = const WebRedirectOptions(),
-  });
-
-  /// Default web options used by [run].
-  final WebRedirectOptions defaultWebOptions;
+  const RedirectWeb();
 
   @override
   RedirectHandle run({
@@ -58,11 +63,7 @@ class RedirectWeb implements RedirectHandler {
     required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
-    // Extract web options from platformOptions, falling back to defaults
-    final webOptions = WebRedirectOptions.fromOptions(
-      options,
-      defaultWebOptions,
-    );
+    final webOptions = WebRedirectOptions.fromOptions(options);
 
     return runWithWebOptions(
       url: url,
@@ -86,6 +87,14 @@ class RedirectWeb implements RedirectHandler {
     RedirectOptions options = const RedirectOptions(),
     WebRedirectOptions webOptions = const WebRedirectOptions(),
   }) {
+    if (webOptions.autoRegisterServiceWorker) {
+      unawaited(
+        RedirectWeb.registerServiceWorker(
+          callbackPath: webOptions.callbackPath ?? '/callback',
+        ),
+      );
+    }
+
     return switch (webOptions.mode) {
       WebRedirectMode.popup => _runPopup(
         url: url,
@@ -131,7 +140,7 @@ class RedirectWeb implements RedirectHandler {
     _registerChannel(callbackUrlScheme, channelName);
 
     void cleanup() {
-      _removeCloseWatcher();
+      _removeCloseWatcher(channelName);
       channel?.close();
       channel = null;
       popup = null;
@@ -184,6 +193,7 @@ class RedirectWeb implements RedirectHandler {
     } else {
       // Detect when the user closes the popup without completing auth.
       _watchForClose(
+        watcherId: channelName,
         target: popup!,
         completer: completer,
         onClosed: cleanup,
@@ -217,7 +227,7 @@ class RedirectWeb implements RedirectHandler {
     _registerChannel(callbackUrlScheme, channelName);
 
     void cleanup() {
-      _removeCloseWatcher();
+      _removeCloseWatcher(channelName);
       channel?.close();
       channel = null;
       popup = null;
@@ -256,6 +266,7 @@ class RedirectWeb implements RedirectHandler {
     } else {
       // Detect when the user closes the tab without completing auth.
       _watchForClose(
+        watcherId: channelName,
         target: popup!,
         completer: completer,
         onClosed: cleanup,
@@ -337,11 +348,12 @@ class RedirectWeb implements RedirectHandler {
       onSuccess: cleanup,
     );
 
-    // Create hidden iframe
+    // Create hidden iframe with sandbox restrictions.
     final iframeId = webOptions.iframeId ?? 'redirect_iframe';
-    iframe = web.document.createElement('iframe') as web.HTMLIFrameElement
+    iframe = web.HTMLIFrameElement()
       ..id = iframeId
       ..style.display = 'none'
+      ..setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms')
       ..src = url.toString();
 
     web.document.body?.appendChild(iframe!);
@@ -375,17 +387,18 @@ class RedirectWeb implements RedirectHandler {
     final channel = web.BroadcastChannel(channelName)
       ..onmessage = (web.MessageEvent event) {
         final data = event.data;
-        if (data != null && !completer.isCompleted) {
-          try {
-            final uriString = (data as JSString).toDart;
-            final uri = Uri.tryParse(uriString);
-            if (uri == null || uri.scheme != callbackUrlScheme) return;
+        if (data == null || !data.isA<JSString>() || completer.isCompleted) {
+          return;
+        }
+        try {
+          final uriString = (data as JSString).toDart;
+          final uri = Uri.tryParse(uriString);
+          if (uri == null || uri.scheme != callbackUrlScheme) return;
 
-            completer.complete(RedirectSuccess(uri: uri));
-            onSuccess();
-          } on Object {
-            // Ignore malformed messages
-          }
+          completer.complete(RedirectSuccess(uri: uri));
+          onSuccess();
+        } on Object {
+          // Ignore malformed messages
         }
       }.toJS;
 
@@ -398,15 +411,18 @@ class RedirectWeb implements RedirectHandler {
   /// `target.closed` once. If the popup was closed without completing auth,
   /// completes with [RedirectCancelled] and calls [onClosed].
   ///
-  /// This is fully event-driven — no polling.
+  /// This is fully event-driven — no polling. Each call is identified by
+  /// [watcherId] so multiple concurrent redirects can coexist without
+  /// overwriting each other's listeners.
   static void _watchForClose({
+    required String watcherId,
     required web.Window target,
     required Completer<RedirectResult> completer,
     required void Function() onClosed,
   }) {
     void check(web.Event _) {
       if (completer.isCompleted) {
-        _removeCloseWatcher();
+        _removeCloseWatcher(watcherId);
         return;
       }
       if (target.closed) {
@@ -415,22 +431,24 @@ class RedirectWeb implements RedirectHandler {
       }
     }
 
-    // Store the listener so cleanup can remove it.
-    web.window.addEventListener('focus', _closeWatcherListener = check.toJS);
-    web.document.addEventListener('visibilitychange', check.toJS);
+    // Store the listener keyed by watcher ID so concurrent redirects
+    // don't interfere with each other.
+    final jsCheck = check.toJS;
+    _closeWatcherListeners[watcherId] = jsCheck;
+    web.window.addEventListener('focus', jsCheck);
+    web.document.addEventListener('visibilitychange', jsCheck);
   }
 
-  /// Removes event listeners installed by [_watchForClose].
-  static void _removeCloseWatcher() {
-    final listener = _closeWatcherListener;
+  /// Removes event listeners installed by [_watchForClose] for [watcherId].
+  static void _removeCloseWatcher(String watcherId) {
+    final listener = _closeWatcherListeners.remove(watcherId);
     if (listener == null) return;
     web.window.removeEventListener('focus', listener);
     web.document.removeEventListener('visibilitychange', listener);
-    _closeWatcherListener = null;
   }
 
-  /// The current close-watcher event listener, if any.
-  static JSFunction? _closeWatcherListener;
+  /// Active close-watcher listeners keyed by watcher ID.
+  static final Map<String, JSFunction> _closeWatcherListeners = {};
 
   static Future<RedirectResult> _wrapWithTimeout(
     Completer<RedirectResult> completer,
@@ -623,7 +641,7 @@ class RedirectWeb implements RedirectHandler {
       final controller = web.window.navigator.serviceWorker.controller;
       if (controller == null) return;
       controller.postMessage(
-        {'type': type, 'channel': channelName}.jsify(),
+        _ServiceWorkerMessage(type: type, channel: channelName),
       );
     } on Object {
       // No SW registered or not supported — fine, the callback page
@@ -635,7 +653,7 @@ class RedirectWeb implements RedirectHandler {
   static String _generateNonce() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final rng = Random.secure();
-    return List.generate(12, (_) => chars[rng.nextInt(chars.length)]).join();
+    return List.generate(16, (_) => chars[rng.nextInt(chars.length)]).join();
   }
 
   /// Attempts to close this window/tab.
@@ -661,16 +679,15 @@ class RedirectWeb implements RedirectHandler {
   ///
   /// The [scriptUrl] defaults to `"redirect_sw.js"`. Place the file
   /// (from `package:redirect_web_core/src/assets/redirect_sw.js`) in your
-  /// `web/` directory.
+  /// `web/` directory. You can copy it with:
   ///
-  /// ```dart
-  /// void main() {
-  ///   // Register once at app startup:
-  ///   RedirectWeb.registerServiceWorker(callbackPath: '/auth/callback');
-  ///
-  ///   // Then use RedirectWeb as normal.
-  /// }
+  /// ```sh
+  /// dart run redirect_web_core:setup
   /// ```
+  ///
+  /// Prefer setting [WebRedirectOptions.autoRegisterServiceWorker] to `true`
+  /// instead of calling this method manually. The SW will be registered
+  /// automatically on the first redirect call.
   static Future<void> registerServiceWorker({
     String scriptUrl = 'redirect_sw.js',
     String callbackPath = '/callback',
@@ -683,10 +700,10 @@ class RedirectWeb implements RedirectHandler {
     // Wait for the worker to become active, then configure it.
     void configure(web.ServiceWorker worker) {
       worker.postMessage(
-        {
-          'type': 'redirect_config',
-          'callbackPath': callbackPath,
-        }.jsify(),
+        _ServiceWorkerMessage(
+          type: 'redirect_config',
+          callbackPath: callbackPath,
+        ),
       );
     }
 

@@ -206,7 +206,6 @@ void main() {
     test('default values are correct', () {
       const options = AndroidRedirectOptions();
 
-      expect(options.preferEphemeral, isNull);
       expect(options.useCustomTabs, isTrue);
       expect(options.showTitle, isFalse);
       expect(options.enableUrlBarHiding, isFalse);
@@ -216,7 +215,6 @@ void main() {
 
     test('custom values are stored correctly', () {
       const options = AndroidRedirectOptions(
-        preferEphemeral: true,
         useCustomTabs: false,
         showTitle: true,
         enableUrlBarHiding: true,
@@ -224,7 +222,6 @@ void main() {
         secondaryToolbarColor: 0xFFFF0000,
       );
 
-      expect(options.preferEphemeral, isTrue);
       expect(options.useCustomTabs, isFalse);
       expect(options.showTitle, isTrue);
       expect(options.enableUrlBarHiding, isTrue);

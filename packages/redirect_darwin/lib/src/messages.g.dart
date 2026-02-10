@@ -14,24 +14,20 @@ PlatformException _createConnectionError(String channelName) {
     message: 'Unable to establish connection on channel: "$channelName".',
   );
 }
-
 bool _deepEquals(Object? a, Object? b) {
   if (a is List && b is List) {
     return a.length == b.length &&
-        a.indexed.every(
-          ((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]),
-        );
+        a.indexed
+        .every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
   }
   if (a is Map && b is Map) {
-    return a.length == b.length &&
-        a.entries.every(
-          (MapEntry<Object?, Object?> entry) =>
-              (b as Map<Object?, Object?>).containsKey(entry.key) &&
-              _deepEquals(entry.value, b[entry.key]),
-        );
+    return a.length == b.length && a.entries.every((MapEntry<Object?, Object?> entry) =>
+        (b as Map<Object?, Object?>).containsKey(entry.key) &&
+        _deepEquals(entry.value, b[entry.key]));
   }
   return a == b;
 }
+
 
 /// Request to start a redirect-based authentication flow.
 class RunRequest {
@@ -40,6 +36,7 @@ class RunRequest {
     required this.callbackUrlScheme,
     required this.preferEphemeral,
     this.timeoutMillis,
+    this.additionalHeaderFields,
   });
 
   String url;
@@ -50,18 +47,24 @@ class RunRequest {
 
   int? timeoutMillis;
 
+  /// Additional HTTP headers to set on the initial URL load.
+  ///
+  /// Maps to `ASWebAuthenticationSession.additionalHeaderFields`.
+  /// Requires iOS 17.4+ / macOS 14.4+. Ignored on older OS versions.
+  Map<String?, String?>? additionalHeaderFields;
+
   List<Object?> _toList() {
     return <Object?>[
       url,
       callbackUrlScheme,
       preferEphemeral,
       timeoutMillis,
+      additionalHeaderFields,
     ];
   }
 
   Object encode() {
-    return _toList();
-  }
+    return _toList();  }
 
   static RunRequest decode(Object result) {
     result as List<Object?>;
@@ -70,6 +73,7 @@ class RunRequest {
       callbackUrlScheme: result[1]! as String,
       preferEphemeral: result[2]! as bool,
       timeoutMillis: result[3] as int?,
+      additionalHeaderFields: (result[4] as Map<Object?, Object?>?)?.cast<String?, String?>(),
     );
   }
 
@@ -87,8 +91,10 @@ class RunRequest {
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode => Object.hashAll(_toList());
+  int get hashCode => Object.hashAll(_toList())
+;
 }
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -97,7 +103,7 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    } else if (value is RunRequest) {
+    }    else if (value is RunRequest) {
       buffer.putUint8(129);
       writeValue(buffer, value.encode());
     } else {
@@ -108,7 +114,7 @@ class _PigeonCodec extends StandardMessageCodec {
   @override
   Object? readValueOfType(int type, ReadBuffer buffer) {
     switch (type) {
-      case 129:
+      case 129: 
         return RunRequest.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -121,13 +127,9 @@ class RedirectHostApi {
   /// Constructor for [RedirectHostApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  RedirectHostApi({
-    BinaryMessenger? binaryMessenger,
-    String messageChannelSuffix = '',
-  }) : pigeonVar_binaryMessenger = binaryMessenger,
-       pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty
-           ? '.$messageChannelSuffix'
-           : '';
+  RedirectHostApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
+      : pigeonVar_binaryMessenger = binaryMessenger,
+        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
@@ -136,16 +138,13 @@ class RedirectHostApi {
 
   /// Starts a redirect flow and returns the callback URL, or null if cancelled.
   Future<String?> run(RunRequest request) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.redirect_darwin.RedirectHostApi.run$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.redirect_darwin.RedirectHostApi.run$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[request],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[request]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
@@ -162,8 +161,7 @@ class RedirectHostApi {
 
   /// Cancels the current redirect flow.
   Future<void> cancel() async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.redirect_darwin.RedirectHostApi.cancel$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.redirect_darwin.RedirectHostApi.cancel$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,

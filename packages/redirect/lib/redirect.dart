@@ -28,6 +28,9 @@ import 'package:redirect_platform_interface/redirect_platform_interface.dart';
 
 export 'package:redirect_platform_interface/redirect_platform_interface.dart'
     show
+        AndroidRedirectOptions,
+        DarwinRedirectOptions,
+        DesktopRedirectOptions,
         RedirectCancelled,
         RedirectFailure,
         RedirectHandle,

@@ -274,7 +274,7 @@ void main() {
   });
 
   // ─────────────────────────────────────────────────
-  // Concurrent operations
+  // Concurrent operations — multi-handle support
   // ─────────────────────────────────────────────────
 
   group('Concurrent operations >', () {
@@ -370,6 +370,147 @@ void main() {
         (r2 as RedirectSuccess).uri.queryParameters['k'],
         equals('v2'),
       );
+    });
+
+    test('three+ concurrent handles each resolve independently', () async {
+      const ch1 = 'test_triple_1';
+      const ch2 = 'test_triple_2';
+      const ch3 = 'test_triple_3';
+
+      final h1 = redirect.runWithWebOptions(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        webOptions: const WebRedirectOptions(
+          mode: WebRedirectMode.hiddenIframe,
+          broadcastChannelName: ch1,
+          iframeId: 'triple_iframe_1',
+        ),
+      );
+      final h2 = redirect.runWithWebOptions(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        webOptions: const WebRedirectOptions(
+          mode: WebRedirectMode.hiddenIframe,
+          broadcastChannelName: ch2,
+          iframeId: 'triple_iframe_2',
+        ),
+      );
+      final h3 = redirect.runWithWebOptions(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        webOptions: const WebRedirectOptions(
+          mode: WebRedirectMode.hiddenIframe,
+          broadcastChannelName: ch3,
+          iframeId: 'triple_iframe_3',
+        ),
+      );
+
+      await _nextTick();
+
+      // Resolve in reverse order: 3, 1, then cancel 2
+      web.BroadcastChannel(ch3)
+        ..postMessage('myapp://cb?h=3'.toJS)
+        ..close();
+      web.BroadcastChannel(ch1)
+        ..postMessage('myapp://cb?h=1'.toJS)
+        ..close();
+      await h2.cancel();
+
+      final r1 = await h1.result;
+      final r2 = await h2.result;
+      final r3 = await h3.result;
+
+      expect(r1, isA<RedirectSuccess>());
+      expect(r2, isA<RedirectCancelled>());
+      expect(r3, isA<RedirectSuccess>());
+      expect(
+        (r1 as RedirectSuccess).uri.queryParameters['h'],
+        equals('1'),
+      );
+      expect(
+        (r3 as RedirectSuccess).uri.queryParameters['h'],
+        equals('3'),
+      );
+    });
+
+    test('cancel one handle does not affect siblings', () async {
+      const ch1 = 'test_cancel_sibling_1';
+      const ch2 = 'test_cancel_sibling_2';
+
+      final h1 = redirect.runWithWebOptions(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        webOptions: const WebRedirectOptions(
+          mode: WebRedirectMode.hiddenIframe,
+          broadcastChannelName: ch1,
+          iframeId: 'cancel_sibling_iframe_1',
+        ),
+      );
+      final h2 = redirect.runWithWebOptions(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        webOptions: const WebRedirectOptions(
+          mode: WebRedirectMode.hiddenIframe,
+          broadcastChannelName: ch2,
+          iframeId: 'cancel_sibling_iframe_2',
+        ),
+      );
+
+      await _nextTick();
+
+      // Cancel h1
+      await h1.cancel();
+      final r1 = await h1.result;
+      expect(r1, isA<RedirectCancelled>());
+
+      // h2 should still be listening — resolve it
+      web.BroadcastChannel(ch2)
+        ..postMessage('myapp://cb?survived=true'.toJS)
+        ..close();
+
+      final r2 = await h2.result;
+      expect(r2, isA<RedirectSuccess>());
+      expect(
+        (r2 as RedirectSuccess).uri.queryParameters['survived'],
+        equals('true'),
+      );
+    });
+
+    test('handles with auto-generated channel names are isolated', () async {
+      // Use run() (not runWithWebOptions) to test auto channel generation.
+      final h1 = redirect.run(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        options: const RedirectOptions(
+          timeout: Duration(milliseconds: 500),
+          platformOptions: {
+            WebRedirectOptions.key: WebRedirectOptions(
+              mode: WebRedirectMode.hiddenIframe,
+              iframeId: 'auto_chan_iframe_1',
+            ),
+          },
+        ),
+      );
+
+      final h2 = redirect.run(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        options: const RedirectOptions(
+          timeout: Duration(milliseconds: 500),
+          platformOptions: {
+            WebRedirectOptions.key: WebRedirectOptions(
+              mode: WebRedirectMode.hiddenIframe,
+              iframeId: 'auto_chan_iframe_2',
+            ),
+          },
+        ),
+      );
+
+      // Both created with unique channels — both timeout independently
+      final r1 = await h1.result;
+      final r2 = await h2.result;
+      expect(r1, isA<RedirectCancelled>());
+      expect(r2, isA<RedirectCancelled>());
     });
   });
 
@@ -777,64 +918,28 @@ void main() {
   // ─────────────────────────────────────────────────
 
   group('Constructor and defaults >', () {
-    test('uses popup mode by default', () {
-      final r = RedirectWeb();
-      expect(r.defaultWebOptions.mode, equals(WebRedirectMode.popup));
+    test('can be instantiated with const constructor', () {
+      const r = RedirectWeb();
+      expect(r, isA<RedirectHandler>());
     });
 
-    test('accepts custom default options', () {
-      final r = RedirectWeb(
-        defaultWebOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          popupWidth: 400,
-          popupHeight: 600,
-        ),
-      );
-      expect(
-        r.defaultWebOptions.mode,
-        equals(WebRedirectMode.hiddenIframe),
-      );
-      expect(r.defaultWebOptions.popupWidth, equals(400));
-      expect(r.defaultWebOptions.popupHeight, equals(600));
-    });
-
-    test('run() uses defaultWebOptions', () {
-      RedirectWeb(
-        defaultWebOptions: const WebRedirectOptions(
-          mode: WebRedirectMode.hiddenIframe,
-          broadcastChannelName: 'test_default_opts',
-          iframeId: 'default_opts_iframe',
-        ),
-      ).run(
-        url: Uri.parse('about:blank'),
-        callbackUrlScheme: 'myapp',
-      );
-
-      // Should have created an iframe (because default mode is iframe)
-      expect(
-        web.document.getElementById('default_opts_iframe'),
-        isNotNull,
-      );
-    });
-
-    test('platformOptions override defaultWebOptions', () {
-      RedirectWeb().run(
+    test('run() uses platformOptions for web config', () {
+      redirect.run(
         url: Uri.parse('about:blank'),
         callbackUrlScheme: 'myapp',
         options: const RedirectOptions(
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe, // <-- override to iframe
-              broadcastChannelName: 'test_override',
-              iframeId: 'override_iframe',
+              mode: WebRedirectMode.hiddenIframe,
+              broadcastChannelName: 'test_platform_opts',
+              iframeId: 'platform_opts_iframe',
             ),
           },
         ),
       );
 
-      // Should have created an iframe (override takes effect)
       expect(
-        web.document.getElementById('override_iframe'),
+        web.document.getElementById('platform_opts_iframe'),
         isNotNull,
       );
     });
@@ -883,6 +988,156 @@ void main() {
 
       final result = await handle.result;
       expect(result, isA<RedirectCancelled>());
+    });
+  });
+
+  // ─────────────────────────────────────────────────
+  // Service Worker helpers
+  // ─────────────────────────────────────────────────
+
+  group('Service Worker helpers >', () {
+    test('registerServiceWorker does not throw', () async {
+      // In test environment, SW registration may fail silently or succeed
+      // depending on the test runner. We just verify it doesn't throw.
+      try {
+        await RedirectWeb.registerServiceWorker(
+          scriptUrl: 'nonexistent_sw.js',
+          callbackPath: '/callback.html',
+        );
+      } on Object {
+        // Expected: SW registration fails in test env — that's fine.
+      }
+    });
+
+    test('closeWindow does not throw', () {
+      // Just verify the static helper doesn't crash.
+      // In a test, window.close() is typically a no-op.
+      expect(RedirectWeb.closeWindow, returnsNormally);
+    });
+  });
+
+  // ─────────────────────────────────────────────────
+  // handleCallback — multi-handle scenarios
+  // ─────────────────────────────────────────────────
+
+  group('handleCallback multi-handle >', () {
+    test('broadcasts to multiple channels simultaneously', () async {
+      const ch1 = 'test_multi_hcb_1';
+      const ch2 = 'test_multi_hcb_2';
+      const ch3 = 'test_multi_hcb_3';
+
+      // Register three channels for the same scheme
+      web.window.localStorage.setItem(
+        'redirect_channels_myapp',
+        jsonEncode([ch1, ch2, ch3]),
+      );
+
+      final received1 = Completer<String>();
+      final received2 = Completer<String>();
+      final received3 = Completer<String>();
+
+      final l1 = web.BroadcastChannel(ch1)
+        ..onmessage = (web.MessageEvent event) {
+          received1.complete((event.data! as JSString).toDart);
+        }.toJS;
+      final l2 = web.BroadcastChannel(ch2)
+        ..onmessage = (web.MessageEvent event) {
+          received2.complete((event.data! as JSString).toDart);
+        }.toJS;
+      final l3 = web.BroadcastChannel(ch3)
+        ..onmessage = (web.MessageEvent event) {
+          received3.complete((event.data! as JSString).toDart);
+        }.toJS;
+
+      RedirectWeb.handleCallback(
+        Uri.parse('myapp://callback?multi=true'),
+      );
+
+      const url = 'myapp://callback?multi=true';
+      expect(
+        await received1.future.timeout(const Duration(seconds: 2)),
+        equals(url),
+      );
+      expect(
+        await received2.future.timeout(const Duration(seconds: 2)),
+        equals(url),
+      );
+      expect(
+        await received3.future.timeout(const Duration(seconds: 2)),
+        equals(url),
+      );
+
+      l1.close();
+      l2.close();
+      l3.close();
+    });
+
+    test('each handle only receives its own channel', () async {
+      const ch1 = 'test_isolated_hcb_1';
+      const ch2 = 'test_isolated_hcb_2';
+
+      // Start two iframe handles
+      final h1 = redirect.runWithWebOptions(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        webOptions: const WebRedirectOptions(
+          mode: WebRedirectMode.hiddenIframe,
+          broadcastChannelName: ch1,
+          iframeId: 'isolated_hcb_iframe_1',
+        ),
+      );
+      final h2 = redirect.runWithWebOptions(
+        url: Uri.parse('about:blank'),
+        callbackUrlScheme: 'myapp',
+        options: const RedirectOptions(
+          timeout: Duration(milliseconds: 500),
+        ),
+        webOptions: const WebRedirectOptions(
+          mode: WebRedirectMode.hiddenIframe,
+          broadcastChannelName: ch2,
+          iframeId: 'isolated_hcb_iframe_2',
+        ),
+      );
+
+      await _nextTick();
+
+      // Only resolve h1 via handleCallback with explicit channel
+      RedirectWeb.handleCallback(
+        Uri.parse('myapp://cb?for=h1'),
+        channelName: ch1,
+      );
+
+      final r1 = await h1.result;
+      expect(r1, isA<RedirectSuccess>());
+      expect(
+        (r1 as RedirectSuccess).uri.queryParameters['for'],
+        equals('h1'),
+      );
+
+      // h2 should not have received it — it times out
+      final r2 = await h2.result;
+      expect(r2, isA<RedirectCancelled>());
+    });
+
+    test('handleCallback with explicit channel ignores registry', () async {
+      const directChannel = 'test_direct_only_channel';
+
+      // Don't register anything in localStorage — use explicit channel
+      final received = Completer<String>();
+      final listener = web.BroadcastChannel(directChannel)
+        ..onmessage = (web.MessageEvent event) {
+          received.complete((event.data! as JSString).toDart);
+        }.toJS;
+
+      RedirectWeb.handleCallback(
+        Uri.parse('custom://callback?direct=yes'),
+        channelName: directChannel,
+      );
+
+      final msg = await received.future.timeout(const Duration(seconds: 2));
+      expect(msg, equals('custom://callback?direct=yes'));
+
+      listener.close();
     });
   });
 

@@ -7,11 +7,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('RedirectPlatformInterface', () {
-    test('default instance is MethodChannelRedirect', () {
-      // Reset to default by accessing the getter
-      expect(RedirectPlatform.instance, isNotNull);
-    });
-
     test('can set and get instance', () {
       final mock = RedirectMock();
       RedirectPlatform.instance = mock;

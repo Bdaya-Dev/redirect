@@ -1,63 +1,50 @@
-import 'package:redirect_cli/redirect_cli.dart';
+import 'package:redirect_io/redirect_io.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('RedirectCli', () {
+  group('RedirectIo', () {
     test('can create instance with default options', () {
-      final cli = RedirectCli();
-      expect(cli.cliOptions.port, isNull);
-      expect(cli.cliOptions.host, equals('localhost'));
-      expect(cli.cliOptions.callbackPath, equals('/callback'));
-      expect(cli.cliOptions.openBrowser, isTrue);
+      final io = RedirectIo();
+      expect(io.ioOptions.callbackUrl, isNull);
+      expect(io.ioOptions.openBrowser, isTrue);
     });
 
     test('can create instance with custom options', () {
-      final cli = RedirectCli(
-        cliOptions: const CliRedirectOptions(
-          port: 8080,
-          host: '127.0.0.1',
-          callbackPath: '/redirect/callback',
+      final io = RedirectIo(
+        ioOptions: IoRedirectOptions(
+          callbackUrl: Uri.parse('http://127.0.0.1:8080/redirect/callback'),
           openBrowser: false,
         ),
       );
 
-      expect(cli.cliOptions.port, equals(8080));
-      expect(cli.cliOptions.host, equals('127.0.0.1'));
-      expect(cli.cliOptions.callbackPath, equals('/redirect/callback'));
-      expect(cli.cliOptions.openBrowser, isFalse);
+      expect(io.ioOptions.callbackUrl!.host, equals('127.0.0.1'));
+      expect(io.ioOptions.callbackUrl!.port, equals(8080));
+      expect(io.ioOptions.callbackUrl!.path, equals('/redirect/callback'));
+      expect(io.ioOptions.openBrowser, isFalse);
     });
 
     test('serverPort is null before run', () {
-      final cli = RedirectCli();
-      expect(cli.serverPort, isNull);
+      final io = RedirectIo();
+      expect(io.serverPort, isNull);
     });
 
     test('callbackUrl is null before run', () {
-      final cli = RedirectCli();
-      expect(cli.callbackUrl, isNull);
+      final io = RedirectIo();
+      expect(io.callbackUrl, isNull);
     });
   });
 
-  group('CliRedirectOptions', () {
-    test('assertion fails if both port and portRange are specified', () {
-      expect(
-        () => CliRedirectOptions(
-          port: 8080,
-          portRange: (start: 3000, end: 3100),
-        ),
-        throwsA(isA<AssertionError>()),
-      );
-    });
-
+  group('IoRedirectOptions', () {
     test('copyWith creates new instance with replaced fields', () {
-      const original = CliRedirectOptions(
-        port: 8080,
+      final original = IoRedirectOptions(
+        callbackUrl: Uri.parse('http://localhost:8080/callback'),
       );
 
-      final copied = original.copyWith(host: '127.0.0.1');
+      final copied = original.copyWith(
+        callbackUrl: Uri.parse('http://127.0.0.1:8080/callback'),
+      );
 
-      expect(copied.port, equals(8080));
-      expect(copied.host, equals('127.0.0.1'));
+      expect(copied.callbackUrl!.host, equals('127.0.0.1'));
     });
   });
 

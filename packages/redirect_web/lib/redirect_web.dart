@@ -13,14 +13,9 @@ export 'package:redirect_web_core/redirect_web_core.dart'
 /// For non-Flutter Dart web applications, use `redirect_web_core` directly.
 class RedirectWebPlugin extends RedirectPlatform {
   /// Creates a new web redirect plugin.
-  ///
-  /// [defaultWebOptions] specifies the default web-specific options.
-  RedirectWebPlugin({
-    core.WebRedirectOptions defaultWebOptions = const core.WebRedirectOptions(),
-  }) : _core = core.RedirectWeb(defaultWebOptions: defaultWebOptions);
+  RedirectWebPlugin();
 
-  /// The underlying pure Dart web implementation.
-  final core.RedirectWeb _core;
+  final core.RedirectWeb _core = core.RedirectWeb();
 
   /// Registers this class as the default instance of [RedirectPlatform].
   static void registerWith([Object? registrar]) {

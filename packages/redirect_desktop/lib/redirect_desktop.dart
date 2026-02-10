@@ -5,5 +5,4 @@
 /// and Windows without any platform-specific native code.
 library;
 
-export 'src/desktop_redirect_options.dart';
 export 'src/redirect_desktop.dart';

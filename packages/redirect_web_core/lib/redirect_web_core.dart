@@ -10,34 +10,24 @@
 ///
 /// final redirect = RedirectWeb();
 ///
-/// // Using popup (default)
-/// final result = await redirect.run(
+/// final handle = redirect.run(
 ///   url: Uri.parse('https://auth.example.com/authorize'),
 ///   callbackUrlScheme: 'https',
+///   options: RedirectOptions(
+///     platformOptions: {
+///       WebRedirectOptions.key: WebRedirectOptions(
+///         mode: WebRedirectMode.popup,
+///         callbackPath: '/callback.html',
+///         autoRegisterServiceWorker: true,
+///       ),
+///     },
+///   ),
 /// );
-/// ```
-///
-/// ## Custom Web Options
-///
-/// Configure via constructor (applies to all calls):
-///
-/// ```dart
-/// final redirect = RedirectWeb(
-///   defaultWebOptions: WebRedirectOptions(mode: WebRedirectMode.newTab),
-/// );
-/// ```
-///
-/// Or per-call with `runWithWebOptions`:
-///
-/// ```dart
-/// final result = await redirect.runWithWebOptions(
-///   url: Uri.parse('https://auth.example.com/authorize'),
-///   callbackUrlScheme: 'https',
-///   webOptions: WebRedirectOptions(mode: WebRedirectMode.samePage),
-/// );
+/// final result = await handle.result;
 /// ```
 library;
 
 export 'package:redirect_core/redirect_core.dart'
     show WebRedirectMode, WebRedirectOptions;
 export 'src/redirect_web.dart';
+export 'src/redirect_web_assets.dart';

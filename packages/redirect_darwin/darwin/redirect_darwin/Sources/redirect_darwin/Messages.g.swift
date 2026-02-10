@@ -136,6 +136,11 @@ struct RunRequest: Hashable {
   var callbackUrlScheme: String
   var preferEphemeral: Bool
   var timeoutMillis: Int64? = nil
+  /// Additional HTTP headers to set on the initial URL load.
+  ///
+  /// Maps to `ASWebAuthenticationSession.additionalHeaderFields`.
+  /// Requires iOS 17.4+ / macOS 14.4+. Ignored on older OS versions.
+  var additionalHeaderFields: [String?: String?]? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -144,12 +149,14 @@ struct RunRequest: Hashable {
     let callbackUrlScheme = pigeonVar_list[1] as! String
     let preferEphemeral = pigeonVar_list[2] as! Bool
     let timeoutMillis: Int64? = nilOrValue(pigeonVar_list[3])
+    let additionalHeaderFields: [String?: String?]? = nilOrValue(pigeonVar_list[4])
 
     return RunRequest(
       url: url,
       callbackUrlScheme: callbackUrlScheme,
       preferEphemeral: preferEphemeral,
-      timeoutMillis: timeoutMillis
+      timeoutMillis: timeoutMillis,
+      additionalHeaderFields: additionalHeaderFields
     )
   }
   func toList() -> [Any?] {
@@ -158,6 +165,7 @@ struct RunRequest: Hashable {
       callbackUrlScheme,
       preferEphemeral,
       timeoutMillis,
+      additionalHeaderFields,
     ]
   }
   static func == (lhs: RunRequest, rhs: RunRequest) -> Bool {

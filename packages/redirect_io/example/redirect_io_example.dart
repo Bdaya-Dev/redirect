@@ -1,26 +1,26 @@
-/// Example demonstrating redirect_cli usage.
+/// Example demonstrating redirect_io usage.
 ///
-/// This example shows how to use the CLI redirect implementation
-/// for redirect-based flows in Dart CLI applications.
+/// This example shows how to use the IO redirect implementation
+/// for redirect-based flows in Dart applications.
 ///
 /// Run with:
 /// ```bash
-/// dart run example/redirect_cli_example.dart
+/// dart run example/redirect_io_example.dart
 /// ```
 library;
 
 import 'dart:io';
 
-import 'package:redirect_cli/redirect_cli.dart';
+import 'package:redirect_io/redirect_io.dart';
 
 void main() async {
   stdout
-    ..writeln('Redirect CLI Example')
+    ..writeln('Redirect IO Example')
     ..writeln('====================\n');
 
   // Create the redirect handler with optional custom settings
-  final redirect = RedirectCli(
-    cliOptions: const CliRedirectOptions(
+  final redirect = RedirectIo(
+    ioOptions: const IoRedirectOptions(
       // Show success/error pages in browser
       successHtml: '''
 <!DOCTYPE html>

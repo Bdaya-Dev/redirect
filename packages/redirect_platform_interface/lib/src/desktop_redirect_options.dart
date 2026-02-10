@@ -8,17 +8,10 @@ import 'package:redirect_core/redirect_core.dart';
 class DesktopRedirectOptions {
   /// Creates desktop redirect options.
   const DesktopRedirectOptions({
-    this.port,
-    this.portRange,
-    this.host = 'localhost',
-    this.bindAddress,
-    this.callbackPath = '/callback',
+    this.callbackUrl,
     this.successHtml,
     this.openBrowser = true,
-  }) : assert(
-         port == null || portRange == null,
-         'Cannot specify both port and portRange',
-       );
+  });
 
   /// The key used in [RedirectOptions.platformOptions].
   static const String key = 'desktop';
@@ -34,20 +27,24 @@ class DesktopRedirectOptions {
     return options.getPlatformOption<DesktopRedirectOptions>(key) ?? fallback;
   }
 
-  /// Fixed port to use for the callback server.
-  final int? port;
-
-  /// Range of ports to try for the callback server.
-  final ({int start, int end})? portRange;
-
-  /// Hostname to use in the redirect URI.
-  final String host;
-
-  /// Address to bind the HTTP server to.
-  final Object? bindAddress;
-
-  /// Path for the callback URL.
-  final String callbackPath;
+  /// The loopback callback URL for the local HTTP server.
+  ///
+  /// Components used:
+  /// - **host** — hostname for the redirect URI and server bind address.
+  ///   Defaults to `localhost`.
+  /// - **port** — port to bind. Use `0` (the default) to auto-select an
+  ///   available port.
+  /// - **path** — callback path to listen on. Defaults to `/callback`.
+  ///
+  /// If null, defaults to `http://localhost:0/callback` (auto-selected port).
+  ///
+  /// Example:
+  /// ```dart
+  /// DesktopRedirectOptions(
+  ///   callbackUrl: Uri.parse('http://127.0.0.1:8080/callback'),
+  /// )
+  /// ```
+  final Uri? callbackUrl;
 
   /// Custom HTML to display on successful callback.
   final String? successHtml;

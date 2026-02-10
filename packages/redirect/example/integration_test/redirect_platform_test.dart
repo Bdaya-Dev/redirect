@@ -54,6 +54,18 @@ void main() {
         expect(find.text('Redirect Strategy'), findsNothing);
       }
     });
+
+    testWidgets('info card mentions multi-handle support', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      if (!kIsWeb) {
+        expect(
+          find.textContaining('Multiple handles can run concurrently'),
+          findsOneWidget,
+        );
+      }
+    });
   });
 
   // ─────────────────────────────────────────────────
@@ -72,11 +84,11 @@ void main() {
       final instance = RedirectPlatform.instance;
       expect(instance, isNotNull);
 
-      // The instance should NOT be the base MethodChannelRedirect on
-      // platforms that have a dart-registered plugin class.
-      // On Android the type is RedirectAndroid,
-      // on iOS/macOS it is RedirectDarwin,
-      // on Linux/Windows it is RedirectDesktop.
+      // The instance should be one of the platform-specific
+      // implementations registered by the federated plugin mechanism.
+      // On Android the type is RedirectAndroidPlugin,
+      // on iOS/macOS it is RedirectDarwinPlugin,
+      // on Linux/Windows it is RedirectDesktopPlugin.
       print('RedirectPlatform.instance type: ${instance.runtimeType}');
       expect(instance.runtimeType.toString(), isNot('RedirectPlatform'));
     });
@@ -131,36 +143,38 @@ void main() {
       await tester.tap(find.text('Run Redirect'));
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Should show loading state
-      final cancelFinder = find.text('Cancel');
-      if (cancelFinder.evaluate().isNotEmpty) {
-        // Cancel the redirect
-        await tester.tap(cancelFinder);
+      // With multi-handle, "Cancel All" appears when any handle is active.
+      // There may also be individual cancel icons on handle cards.
+      final cancelAllFinder = find.text('Cancel All');
+      final cancelIconFinder = find.byIcon(Icons.cancel_outlined);
 
-        // The cancel is async — pump multiple frames to let it propagate.
-        for (var i = 0; i < 20; i++) {
-          await tester.pump(const Duration(milliseconds: 200));
-          final hasResult =
-              find.text('Cancelled').evaluate().isNotEmpty ||
-              find.text('Failed').evaluate().isNotEmpty ||
-              find.text('Success').evaluate().isNotEmpty;
-          if (hasResult) break;
-        }
+      if (cancelAllFinder.evaluate().isNotEmpty) {
+        await tester.tap(cancelAllFinder);
+      } else if (cancelIconFinder.evaluate().isNotEmpty) {
+        await tester.tap(cancelIconFinder.first);
+      }
 
-        // Accept any terminal state — on a real machine the redirect may
-        // complete (Success) before cancel takes effect, or cancel may win.
-        // The key assertion is that the app doesn't crash and reaches SOME
-        // terminal state.
-        final hasTerminal =
-            find.text('Cancelled').evaluate().isNotEmpty ||
-            find.text('Failed').evaluate().isNotEmpty ||
-            find.text('Success').evaluate().isNotEmpty;
-        // If still loading after 4 seconds, the async cancel didn't fully
-        // propagate through the integration test runner — acceptable on
-        // desktop where the loopback server keeps running concurrently.
-        if (hasTerminal) {
-          expect(hasTerminal, isTrue);
-        }
+      // The cancel is async — pump multiple frames to let it propagate.
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+        final hasResult =
+            find.textContaining('Cancelled').evaluate().isNotEmpty ||
+            find.textContaining('Failed').evaluate().isNotEmpty ||
+            find.textContaining('Success').evaluate().isNotEmpty;
+        if (hasResult) break;
+      }
+
+      // Accept any terminal state — on a real machine the redirect may
+      // complete (Success) before cancel takes effect, or cancel may win.
+      final hasTerminal =
+          find.textContaining('Cancelled').evaluate().isNotEmpty ||
+          find.textContaining('Failed').evaluate().isNotEmpty ||
+          find.textContaining('Success').evaluate().isNotEmpty;
+      // If still loading after 4 seconds, the async cancel didn't fully
+      // propagate through the integration test runner — acceptable on
+      // desktop where the loopback server keeps running concurrently.
+      if (hasTerminal) {
+        expect(hasTerminal, isTrue);
       }
     });
   });

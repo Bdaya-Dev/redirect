@@ -9,7 +9,7 @@ workspace:
   - packages/redirect
   - packages/redirect/example
   - packages/redirect_android
-  - packages/redirect_cli
+  - packages/redirect_io
   - packages/redirect_core
   - packages/redirect_darwin
   - packages/redirect_desktop
@@ -72,6 +72,27 @@ melos:
     test:dart:wasm:
       name: Dart browser tests via dart2wasm (requires Chrome)
       exec: dart test -p chrome -c dart2wasm
+      packageFilters:
+        scope:
+          - "redirect_web_core"
+
+    test:web-assets:chrome:
+      name: Web assets browser tests (JS execution in Chrome)
+      exec: dart test -p chrome test/redirect_web_assets_browser_test.dart
+      packageFilters:
+        scope:
+          - "redirect_web_core"
+
+    test:jaspr:
+      name: Jaspr integration tests (component + SSR)
+      exec: dart test test/integration/redirect_jaspr_integration_test.dart
+      packageFilters:
+        scope:
+          - "redirect_web_core"
+
+    test:web-integration:
+      name: Web integration tests (BroadcastChannel, iframes, popups)
+      exec: dart test -p chrome test/integration/redirect_web_integration_test.dart
       packageFilters:
         scope:
           - "redirect_web_core"

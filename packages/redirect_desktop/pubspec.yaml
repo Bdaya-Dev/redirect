@@ -26,11 +26,9 @@ flutter:
         dartPluginClass: RedirectDesktopPlugin
 
 dependencies:
-  ffi: ^2.1.0
   flutter:
     sdk: flutter
-  meta: ^1.12.0
-  redirect_core: ^0.1.0
+  redirect_io: ^0.1.0
   redirect_platform_interface: ^0.1.0
 
 dev_dependencies:

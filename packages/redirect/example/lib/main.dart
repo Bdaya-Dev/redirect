@@ -11,17 +11,17 @@ void main() => runApp(const MyApp());
 ///
 /// On web, uses an HTTP callback via callback.html since browsers
 /// can't handle custom URL schemes. On other platforms, uses myapp://.
-String _buildTestRedirectUrl() {
+String _buildTestRedirectUrl({String code = 'test123'}) {
   if (kIsWeb) {
     final origin = Uri.base.origin;
     final callbackUrl = Uri.encodeComponent(
-      '$origin/callback.html?code=test123&_scheme=myapp',
+      '$origin/callback.html?code=$code&_scheme=myapp',
     );
     return 'https://httpbin.org/redirect-to'
         '?url=$callbackUrl&status_code=302';
   }
   return 'https://httpbin.org/redirect-to'
-      '?url=myapp%3A%2F%2Fcallback%3Fcode%3Dtest123&status_code=302';
+      '?url=myapp%3A%2F%2Fcallback%3Fcode%3D$code&status_code=302';
 }
 
 class MyApp extends StatelessWidget {
@@ -40,6 +40,20 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// Tracks a single redirect handle and its result.
+class _HandleEntry {
+  _HandleEntry({
+    required this.handle,
+    required this.label,
+    this.result,
+  });
+
+  final RedirectHandle handle;
+  final String label;
+  RedirectResult? result;
+  bool get isComplete => result != null;
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -51,9 +65,10 @@ class _HomePageState extends State<HomePage> {
   final _urlController = TextEditingController();
   final _schemeController = TextEditingController(text: 'myapp');
 
-  RedirectResult? _lastResult;
-  bool _isLoading = false;
-  RedirectHandle? _activeHandle;
+  /// All active + completed redirect handles.
+  final List<_HandleEntry> _handles = [];
+
+  int _handleCounter = 0;
 
   // Core options
   bool _preferEphemeral = false;
@@ -77,6 +92,8 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  bool get _hasActiveHandles => _handles.any((entry) => !entry.isComplete);
+
   Future<void> _runRedirect() async {
     final url = Uri.tryParse(_urlController.text.trim());
     final scheme = _schemeController.text.trim();
@@ -91,10 +108,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _lastResult = null;
-    });
+    _handleCounter++;
+    final label = 'Handle #$_handleCounter';
 
     try {
       final handle = runRedirect(
@@ -109,32 +124,56 @@ class _HomePageState extends State<HomePage> {
                 mode: _webMode,
                 popupWidth: _popupWidth,
                 popupHeight: _popupHeight,
+                callbackPath: '/callback.html',
+                autoRegisterServiceWorker: true,
               ),
           },
         ),
       );
 
-      _activeHandle = handle;
-      final result = await handle.result;
+      final entry = _HandleEntry(handle: handle, label: label);
+      setState(() => _handles.add(entry));
 
+      // Await result asynchronously — doesn't block launching more handles.
+      final result = await handle.result;
       if (!mounted) return;
-      setState(() {
-        _lastResult = result;
-        _isLoading = false;
-      });
+      setState(() => entry.result = result);
     } on Exception catch (e) {
       if (!mounted) return;
-      setState(() {
-        _lastResult = RedirectFailure(error: e, stackTrace: StackTrace.current);
-        _isLoading = false;
-      });
+      final failEntry = _HandleEntry(
+        handle: RedirectHandle(
+          url: url,
+          callbackUrlScheme: scheme,
+          result: Future.value(
+            RedirectFailure(error: e, stackTrace: StackTrace.current),
+          ),
+          cancel: () async {},
+        ),
+        label: label,
+        result: RedirectFailure(error: e, stackTrace: StackTrace.current),
+      );
+      setState(() => _handles.add(failEntry));
     }
   }
 
-  Future<void> _cancelRedirect() async {
-    await _activeHandle?.cancel();
-    _activeHandle = null;
-    setState(() => _isLoading = false);
+  Future<void> _cancelHandle(_HandleEntry entry) async {
+    await entry.handle.cancel();
+    // The awaiter in _runRedirect will update the entry when the
+    // cancel completes.
+  }
+
+  Future<void> _cancelAllHandles() async {
+    for (final entry in _handles) {
+      if (!entry.isComplete) {
+        await entry.handle.cancel();
+      }
+    }
+  }
+
+  void _clearCompleted() {
+    setState(() {
+      _handles.removeWhere((entry) => entry.isComplete);
+    });
   }
 
   void _showError(String message) {
@@ -152,6 +191,14 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Redirect Plugin'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          if (_handles.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              tooltip: 'Clear completed',
+              onPressed: _clearCompleted,
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -193,9 +240,11 @@ class _HomePageState extends State<HomePage> {
             ],
 
             _buildActionButtons(),
-            const SizedBox(height: 24),
 
-            if (_lastResult != null) _buildResultCard(),
+            if (_handles.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              _buildHandlesList(),
+            ],
           ],
         ),
       ),
@@ -236,9 +285,13 @@ class _HomePageState extends State<HomePage> {
               kIsWeb
                   ? 'Uses httpbin.org to simulate a redirect. '
                         'The callback goes to callback.html which '
-                        'sends the result back via BroadcastChannel.'
+                        'sends the result back via BroadcastChannel.\n\n'
+                        'You can launch multiple concurrent handles '
+                        'to test parallel redirect flows.'
                   : 'Uses httpbin.org to simulate a redirect '
-                        'back to the myapp:// custom URL scheme.',
+                        'back to the myapp:// custom URL scheme.\n\n'
+                        'Multiple handles can run concurrently — each '
+                        'has its own isolated channel.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -493,39 +546,74 @@ class _HomePageState extends State<HomePage> {
       children: [
         Expanded(
           child: FilledButton.icon(
-            onPressed: _isLoading ? null : _runRedirect,
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.play_arrow),
-            label: Text(
-              _isLoading ? 'Running...' : 'Run Redirect',
-            ),
+            onPressed: _runRedirect,
+            icon: const Icon(Icons.play_arrow),
+            label: const Text('Run Redirect'),
           ),
         ),
-        const SizedBox(width: 8),
-        if (_isLoading)
+        if (_hasActiveHandles) ...[
+          const SizedBox(width: 8),
           FilledButton.tonalIcon(
-            onPressed: _cancelRedirect,
+            onPressed: _cancelAllHandles,
             icon: const Icon(Icons.cancel),
-            label: const Text('Cancel'),
+            label: const Text('Cancel All'),
           ),
+        ],
       ],
     );
   }
 
-  Widget _buildResultCard() {
-    final result = _lastResult!;
+  /// Displays all handles (active + completed) in a list.
+  Widget _buildHandlesList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            'Handles (${_handles.length})',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        ..._handles.reversed.map(_buildHandleCard),
+      ],
+    );
+  }
 
+  Widget _buildHandleCard(_HandleEntry entry) {
+    final result = entry.result;
+
+    if (result == null) {
+      // Active / in-progress
+      return Card(
+        child: ListTile(
+          leading: const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          title: Text(entry.label),
+          subtitle: Text(
+            entry.handle.url.host,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.cancel_outlined),
+            tooltip: 'Cancel',
+            onPressed: () => _cancelHandle(entry),
+          ),
+        ),
+      );
+    }
+
+    return _buildResultCard(entry.label, result);
+  }
+
+  Widget _buildResultCard(String label, RedirectResult result) {
     return switch (result) {
       RedirectSuccess(:final uri) => _ResultCard(
-        title: 'Success',
+        title: '$label — Success',
         color: Colors.green,
         icon: Icons.check_circle,
         children: [
@@ -556,22 +644,22 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      RedirectCancelled() => const _ResultCard(
-        title: 'Cancelled',
+      RedirectCancelled() => _ResultCard(
+        title: '$label — Cancelled',
         color: Colors.orange,
         icon: Icons.cancel,
-        children: [
+        children: const [
           Text(
             'The redirect was cancelled by user or '
             'timed out.',
           ),
         ],
       ),
-      RedirectPending() => const _ResultCard(
-        title: 'Pending',
+      RedirectPending() => _ResultCard(
+        title: '$label — Pending',
         color: Colors.blue,
         icon: Icons.hourglass_empty,
-        children: [
+        children: const [
           Text(
             'Redirect initiated but result will arrive '
             'later. This typically occurs with same-page '
@@ -580,7 +668,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       RedirectFailure(:final error, :final stackTrace) => _ResultCard(
-        title: 'Failed',
+        title: '$label — Failed',
         color: Colors.red,
         icon: Icons.error,
         children: [

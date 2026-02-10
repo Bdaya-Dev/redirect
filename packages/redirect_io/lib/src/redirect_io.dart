@@ -1,26 +1,26 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:redirect_cli/src/cli_redirect_options.dart';
 import 'package:redirect_core/redirect_core.dart';
+import 'package:redirect_io/src/io_redirect_options.dart';
 
-/// Pure Dart CLI implementation of [RedirectHandler].
+/// Pure Dart IO implementation of [RedirectHandler].
 ///
 /// Uses a loopback HTTP server to capture redirect callbacks.
 /// Automatically opens the system browser and waits for the callback.
 ///
 /// This implementation works on Linux, macOS, and Windows without any
 /// platform-specific dependencies.
-class RedirectCli implements RedirectHandler {
-  /// Creates a new CLI redirect handler.
+class RedirectIo implements RedirectHandler {
+  /// Creates a new IO redirect handler.
   ///
-  /// [cliOptions] configures server port, host, HTML responses, etc.
-  RedirectCli({
-    this.cliOptions = const CliRedirectOptions(),
+  /// [ioOptions] configures server port, host, HTML responses, etc.
+  RedirectIo({
+    this.ioOptions = const IoRedirectOptions(),
   });
 
-  /// CLI-specific options.
-  final CliRedirectOptions cliOptions;
+  /// IO-specific options.
+  final IoRedirectOptions ioOptions;
 
   HttpServer? _server;
   Completer<RedirectResult>? _completer;
@@ -31,11 +31,11 @@ class RedirectCli implements RedirectHandler {
     required String callbackUrlScheme,
     RedirectOptions options = const RedirectOptions(),
   }) {
-    // Extract CLI options from platformOptions, falling back to
+    // Extract IO options from platformOptions, falling back to
     // constructor-injected defaults.
-    final effectiveOptions = CliRedirectOptions.fromOptions(
+    final effectiveOptions = IoRedirectOptions.fromOptions(
       options,
-      cliOptions,
+      ioOptions,
     );
 
     // Cancel any existing operation synchronously
@@ -46,16 +46,22 @@ class RedirectCli implements RedirectHandler {
 
     Future<RedirectResult> doRun() async {
       try {
+        final callbackUrl = effectiveOptions.callbackUrl;
+        final host = callbackUrl?.host ?? 'localhost';
+        final port = callbackUrl?.port ?? 0;
+        final callbackPath =
+            (callbackUrl?.path.isNotEmpty ?? false) ? callbackUrl!.path : '/callback';
+
         // Start loopback server
-        _server = await _startServer(effectiveOptions);
-        final port = _server!.port;
+        _server = await HttpServer.bind(host, port);
+        final actualPort = _server!.port;
 
         // Construct the redirect URI using the loopback server
         final redirectUri = Uri(
           scheme: 'http',
-          host: effectiveOptions.host,
-          port: port,
-          path: effectiveOptions.callbackPath,
+          host: host,
+          port: actualPort,
+          path: callbackPath,
         );
 
         // Modify the authorization URL to use our redirect URI
@@ -73,7 +79,8 @@ class RedirectCli implements RedirectHandler {
               request: request,
               callbackUrlScheme: callbackUrlScheme,
               completer: completer,
-              cliOptions: effectiveOptions,
+              callbackPath: callbackPath,
+              ioOptions: effectiveOptions,
             );
           },
           onError: (Object error, StackTrace stackTrace) {
@@ -125,46 +132,19 @@ class RedirectCli implements RedirectHandler {
     );
   }
 
-  Future<HttpServer> _startServer(CliRedirectOptions cliOptions) async {
-    final bindAddress = cliOptions.bindAddress ?? InternetAddress.loopbackIPv4;
-
-    // Fixed port specified
-    if (cliOptions.port != null) {
-      return HttpServer.bind(bindAddress, cliOptions.port!);
-    }
-
-    // Port range specified - try each port until one works
-    if (cliOptions.portRange != null) {
-      final range = cliOptions.portRange!;
-      for (var port = range.start; port <= range.end; port++) {
-        try {
-          return await HttpServer.bind(bindAddress, port);
-        } on SocketException {
-          // Port in use, try next
-          continue;
-        }
-      }
-      throw SocketException(
-        'No available port in range ${range.start}-${range.end}',
-      );
-    }
-
-    // Auto-select available port
-    return HttpServer.bind(bindAddress, 0);
-  }
-
   Future<void> _handleRequest({
     required HttpRequest request,
     required String callbackUrlScheme,
     required Completer<RedirectResult> completer,
-    required CliRedirectOptions cliOptions,
+    required String callbackPath,
+    required IoRedirectOptions ioOptions,
   }) async {
     try {
-      if (request.uri.path == cliOptions.callbackPath) {
+      if (request.uri.path == callbackPath) {
         // Check for error response from the redirect target
         final error = request.uri.queryParameters['error'];
         if (error != null) {
-          await _sendErrorResponse(request, error, cliOptions);
+          await _sendErrorResponse(request, error, ioOptions);
           if (!completer.isCompleted) {
             completer.complete(
               RedirectFailure(
@@ -188,7 +168,7 @@ class RedirectCli implements RedirectHandler {
         );
 
         // Send success response to browser
-        await _sendSuccessResponse(request, cliOptions);
+        await _sendSuccessResponse(request, ioOptions);
 
         // Complete with success
         if (!completer.isCompleted) {
@@ -210,24 +190,24 @@ class RedirectCli implements RedirectHandler {
 
   Future<void> _sendSuccessResponse(
     HttpRequest request,
-    CliRedirectOptions cliOptions,
+    IoRedirectOptions ioOptions,
   ) async {
     request.response
       ..statusCode = HttpStatus.ok
       ..headers.contentType = ContentType.html
-      ..write(cliOptions.successHtml ?? _defaultSuccessHtml);
+      ..write(ioOptions.successHtml ?? _defaultSuccessHtml);
     await request.response.close();
   }
 
   Future<void> _sendErrorResponse(
     HttpRequest request,
     String error,
-    CliRedirectOptions cliOptions,
+    IoRedirectOptions ioOptions,
   ) async {
     // HTML-escape the error to prevent XSS attacks
     final escapedError = _htmlEscape(error);
     final html =
-        cliOptions.errorHtml ??
+        ioOptions.errorHtml ??
         _defaultErrorHtml.replaceAll('{{error}}', escapedError);
     request.response
       ..statusCode = HttpStatus.badRequest
@@ -302,17 +282,18 @@ class RedirectCli implements RedirectHandler {
 
   /// Returns the full callback URL the server is listening on.
   ///
-  /// Useful when [CliRedirectOptions.openBrowser] is false and you need
+  /// Useful when [IoRedirectOptions.openBrowser] is false and you need
   /// to display the URL to the user.
   ///
   /// Returns null if the server is not running.
   Uri? get callbackUrl {
     if (_server == null) return null;
+    final url = ioOptions.callbackUrl;
     return Uri(
       scheme: 'http',
-      host: cliOptions.host,
+      host: url?.host ?? 'localhost',
       port: _server!.port,
-      path: cliOptions.callbackPath,
+      path: (url?.path.isNotEmpty ?? false) ? url!.path : '/callback',
     );
   }
 }

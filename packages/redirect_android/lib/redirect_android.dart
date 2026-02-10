@@ -1,10 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:redirect_android/src/android_redirect_options.dart';
 import 'package:redirect_android/src/messages.g.dart';
 import 'package:redirect_platform_interface/redirect_platform_interface.dart';
-
-export 'src/android_redirect_options.dart';
 
 /// The Android implementation of [RedirectPlatform].
 ///
@@ -32,14 +29,12 @@ class RedirectAndroidPlugin extends RedirectPlatform {
     Future<RedirectResult> doRun() async {
       try {
         final androidOptions = AndroidRedirectOptions.fromOptions(options);
-        final preferEphemeral =
-            androidOptions.preferEphemeral ?? options.preferEphemeral;
 
         final result = await _api.run(
           RunRequest(
             url: url.toString(),
             callbackUrlScheme: callbackUrlScheme,
-            preferEphemeral: preferEphemeral,
+            preferEphemeral: options.preferEphemeral,
             timeoutMillis: options.timeout?.inMilliseconds,
             androidOptions: AndroidOptions(
               useCustomTabs: androidOptions.useCustomTabs,
