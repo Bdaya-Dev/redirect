@@ -15,8 +15,8 @@ The **Linux & Windows** implementation of the [`redirect`](https://pub.dev/packa
 ## How it works
 
 1. Starts a temporary HTTP server on `127.0.0.1` with a random port.
-2. Opens the authorization URL in the system's default browser.
-3. Waits for the authorization server to redirect to `http://127.0.0.1:PORT/`.
+2. Opens the target URL in the system's default browser.
+3. Waits for the server to redirect to `http://127.0.0.1:PORT/`.
 4. Captures the callback URI and returns it as a `RedirectSuccess`.
 5. Shuts down the temporary server.
 

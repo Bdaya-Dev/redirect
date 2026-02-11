@@ -19,7 +19,7 @@ The **Flutter web** implementation of the [`redirect`](https://pub.dev/packages/
 | `WebRedirectMode.popup` | Centered popup window (default) |
 | `WebRedirectMode.newTab` | New browser tab |
 | `WebRedirectMode.samePage` | Current-page navigation (returns `RedirectPending`) |
-| `WebRedirectMode.hiddenIframe` | Hidden iframe for silent token refresh |
+| `WebRedirectMode.iframe` | Iframe (hidden by default, configurable) |
 
 ## Usage
 
@@ -35,9 +35,12 @@ For **non-Flutter** Dart web apps, use [`redirect_web_core`](https://pub.dev/pac
 
 ## Web Setup
 
-Run `dart run redirect_web_core:setup` to copy the Service Worker and callback
-page to your `web/` directory. Then set `autoRegisterServiceWorker: true` in
-your `WebRedirectOptions`. See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
+Run `dart run redirect_web_core:setup` to copy the callback relay script
+to your `web/` directory. Then include it on your callback page:
+
+```html
+<script src="redirect_callback.js"></script>
+```
 
 ## License
 

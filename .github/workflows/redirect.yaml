@@ -102,7 +102,7 @@ jobs:
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
-      - name: Integration tests
+      - name: Integration tests (platform UI)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -111,6 +111,28 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: flutter test integration_test/redirect_platform_test.dart --timeout 120s
+          working-directory: packages/redirect/example
+
+      - name: Integration tests (e2e)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: flutter test integration_test/redirect_e2e_test.dart --timeout 120s
+          working-directory: packages/redirect/example
+
+      - name: Integration tests (Android-specific)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: flutter test integration_test/redirect_android_test.dart --timeout 120s
           working-directory: packages/redirect/example
 
   # ───────────────────────────────────────────────────────────
@@ -145,10 +167,22 @@ jobs:
       - name: Build for iOS Simulator
         run: flutter build ios --simulator --no-codesign
 
-      - name: Integration tests
+      - name: Integration tests (platform UI)
         timeout-minutes: 20
         run: |
           flutter test integration_test/redirect_platform_test.dart \
+            -d iPhone --timeout 120s
+
+      - name: Integration tests (e2e)
+        timeout-minutes: 20
+        run: |
+          flutter test integration_test/redirect_e2e_test.dart \
+            -d iPhone --timeout 120s
+
+      - name: Integration tests (Darwin-specific)
+        timeout-minutes: 20
+        run: |
+          flutter test integration_test/redirect_darwin_test.dart \
             -d iPhone --timeout 120s
 
   # ───────────────────────────────────────────────────────────
@@ -173,9 +207,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Integration tests
+      - name: Integration tests (platform UI)
         run: |
           flutter test integration_test/redirect_platform_test.dart \
+            -d macos --timeout 120s
+
+      - name: Integration tests (e2e)
+        run: |
+          flutter test integration_test/redirect_e2e_test.dart \
+            -d macos --timeout 120s
+
+      - name: Integration tests (Darwin-specific)
+        run: |
+          flutter test integration_test/redirect_darwin_test.dart \
             -d macos --timeout 120s
 
   # ───────────────────────────────────────────────────────────
@@ -207,9 +251,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Integration tests
+      - name: Integration tests (platform UI)
         run: |
           xvfb-run flutter test integration_test/redirect_platform_test.dart \
+            -d linux --timeout 120s
+
+      - name: Integration tests (e2e)
+        run: |
+          xvfb-run flutter test integration_test/redirect_e2e_test.dart \
+            -d linux --timeout 120s
+
+      - name: Integration tests (Desktop-specific)
+        run: |
+          xvfb-run flutter test integration_test/redirect_desktop_test.dart \
             -d linux --timeout 120s
 
   # ───────────────────────────────────────────────────────────
@@ -234,8 +288,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Integration tests
+      - name: Integration tests (platform UI)
         run: flutter test integration_test/redirect_platform_test.dart -d windows --timeout 120s
+
+      - name: Integration tests (e2e)
+        run: flutter test integration_test/redirect_e2e_test.dart -d windows --timeout 120s
+
+      - name: Integration tests (Desktop-specific)
+        run: flutter test integration_test/redirect_desktop_test.dart -d windows --timeout 120s
 
   # ───────────────────────────────────────────────────────────
   # Flutter Web (JS) — integration tests via flutter drive

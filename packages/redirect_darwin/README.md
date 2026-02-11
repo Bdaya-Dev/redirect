@@ -14,7 +14,7 @@ The **iOS & macOS** implementation of the [`redirect`](https://pub.dev/packages/
 
 ## How it works
 
-1. Opens the authorization URL using `ASWebAuthenticationSession`.
+1. Opens the target URL using `ASWebAuthenticationSession`.
 2. The system presents a secure browser sheet (iOS) or window (macOS).
 3. Intercepts the callback URL matching `callbackUrlScheme`.
 4. Returns the callback URI as a `RedirectSuccess`.
@@ -47,7 +47,7 @@ For custom URL schemes, register your scheme in `Info.plist`:
 
 ## Options
 
-- **`preferEphemeral: true`** — Sets `prefersEphemeralWebBrowserSession` on the session, preventing cookie/session sharing with Safari.
+- **`preferEphemeral: true`** on `IosRedirectOptions` / `MacosRedirectOptions` — Sets `prefersEphemeralWebBrowserSession` on the session, preventing cookie/session sharing with Safari.
 
 ## License
 

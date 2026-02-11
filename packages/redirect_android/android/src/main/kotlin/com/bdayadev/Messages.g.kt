@@ -220,6 +220,8 @@ interface RedirectHostApi {
    * If [nonce] is empty, cancels all pending operations.
    */
   fun cancel(nonce: String)
+  /** Returns true if a browser that supports Custom Tabs is available. */
+  fun supportsCustomTabs(): Boolean
 
   companion object {
     /** The codec used by RedirectHostApi. */
@@ -259,6 +261,21 @@ interface RedirectHostApi {
             val wrapped: List<Any?> = try {
               api.cancel(nonceArg)
               listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.redirect_android.RedirectHostApi.supportsCustomTabs$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.supportsCustomTabs())
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)
             }

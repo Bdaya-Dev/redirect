@@ -68,7 +68,7 @@ Each suite has its own melos script. Chrome must be installed for browser tests.
 
 | Script | Environment | What it covers |
 |--------|-------------|----------------|
-| `test:web-assets:chrome` | Chrome | Executes `callbackJs` and `serviceWorkerJs` via `eval` — BroadcastChannel delivery, channel registration, fetch handler routing, `_scheme` override, `window.close()` scheduling, error tolerance |
+| `test:web-assets:chrome` | Chrome | Executes `callbackJs` via `eval` — BroadcastChannel delivery, channel registration, `_scheme` override, `window.close()` scheduling, error tolerance |
 | `test:jaspr` | VM | Jaspr component rendering (`testComponents`) and SSR (`testServer`) |
 | `test:web-integration` | Chrome | Full redirect flows — BroadcastChannel, localStorage, iframes, popups, concurrent handles, end-to-end `handleCallback` |
 
@@ -106,8 +106,7 @@ or a web device.
 ## Web asset setup (required for web flows)
 
 The web implementation relies on BroadcastChannel to deliver callback URLs.
-This requires a Service Worker hosted at a real same-origin URL. Package
-assets cannot be auto-copied to the web root.
+This requires a callback relay script on your callback page.
 
 Copy assets into your app's web/ directory:
 
@@ -117,32 +116,18 @@ dart run redirect_web_core:setup
 
 This writes:
 
-- web/redirect_sw.js
+- web/redirect_callback.js
 
-Then enable auto-registration in your `WebRedirectOptions`:
-
-```dart
-WebRedirectOptions(
-  callbackPath: '/callback.html',
-  autoRegisterServiceWorker: true,
-)
-```
-
-The Service Worker is registered automatically on first redirect call.
-
-## Fallback (no Service Worker)
-
-If you cannot use a Service Worker, run the setup with `--with-callback`:
-
-```sh
-dart run redirect_web_core:setup --with-callback
-```
-
-Include the script on your callback page:
+Then include it on your callback page:
 
 ```html
 <script src="redirect_callback.js"></script>
 ```
+
+## Fallback (no callback script)
+
+If you cannot use a separate JS file, run the setup with `--with-callback`
+to see the source, or call `RedirectWeb.handleCallback()` from Dart directly.
 
 Or call from a Dart callback page:
 

@@ -61,7 +61,7 @@ void main() async {
   final redirect = ExampleRedirectIo();
 
   // Test URL using httpbin to simulate a redirect
-  // In a real app, this would be your provider's authorization URL
+  // In a real app, this would be the URL you want to redirect through
   final testUrl = Uri.parse(
     'https://httpbin.org/redirect-to'
     '?url=myapp%3A%2F%2Fcallback%3Fcode%3Dtest_auth_code_123'

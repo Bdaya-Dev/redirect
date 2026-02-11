@@ -32,7 +32,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Redirect Plugin'), findsOneWidget);
-      expect(find.text('Authorization URL'), findsOneWidget);
+      expect(find.text('Redirect URL'), findsOneWidget);
       expect(find.text('Callback URL Scheme'), findsOneWidget);
       expect(find.text('Core Options'), findsOneWidget);
       expect(find.text('Prefer Ephemeral Session'), findsOneWidget);
@@ -81,7 +81,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining('Hidden iframe is for silent refresh'),
+        find.textContaining('Iframe mode (hidden by default)'),
         findsOneWidget,
       );
 
@@ -143,7 +143,7 @@ void main() {
 
       web.window.sessionStorage
         ..setItem('redirect_pending', 'true')
-        ..setItem('redirect_pending_scheme', Uri.base.scheme);
+        ..setItem('redirect_callback_url', Uri.base.toString());
 
       expect(RedirectWeb.hasPendingRedirect(), isTrue);
 
@@ -158,7 +158,7 @@ void main() {
       const channelName = 'flutter_test_handle_callback';
 
       web.window.localStorage.setItem(
-        'redirect_channels_myapp',
+        'redirect_channels',
         jsonEncode([channelName]),
       );
 
@@ -177,7 +177,7 @@ void main() {
       expect(received, contains('myapp://callback?token=abc'));
 
       listener.close();
-      web.window.localStorage.removeItem('redirect_channels_myapp');
+      web.window.localStorage.removeItem('redirect_channels');
     });
 
     testWidgets('handleCallback broadcasts to multiple channels', (
@@ -189,7 +189,7 @@ void main() {
       const ch2 = 'flutter_test_multi_ch2';
 
       web.window.localStorage.setItem(
-        'redirect_channels_myapp',
+        'redirect_channels',
         jsonEncode([ch1, ch2]),
       );
 
@@ -216,7 +216,7 @@ void main() {
 
       l1.close();
       l2.close();
-      web.window.localStorage.removeItem('redirect_channels_myapp');
+      web.window.localStorage.removeItem('redirect_channels');
     });
 
     testWidgets('clearPendingRedirect removes session state', (tester) async {
@@ -224,7 +224,7 @@ void main() {
 
       web.window.sessionStorage
         ..setItem('redirect_pending', 'true')
-        ..setItem('redirect_pending_scheme', 'myapp');
+        ..setItem('redirect_callback_url', 'https://example.com/cb');
 
       expect(RedirectWeb.hasPendingRedirect(), isTrue);
 
@@ -263,7 +263,7 @@ void main() {
     testWidgets('handles empty channel list gracefully', (tester) async {
       if (!kIsWeb) return;
 
-      web.window.localStorage.removeItem('redirect_channels_myapp');
+      web.window.localStorage.removeItem('redirect_channels');
 
       expect(
         () => RedirectWeb.handleCallback(Uri.parse('myapp://callback')),

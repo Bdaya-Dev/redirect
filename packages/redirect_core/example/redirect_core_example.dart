@@ -49,7 +49,6 @@ void main() async {
     url: Uri.parse('https://auth.example.com/authorize?client_id=xxx'),
     options: const RedirectOptions(
       timeout: Duration(minutes: 5),
-      preferEphemeral: true,
     ),
   );
 

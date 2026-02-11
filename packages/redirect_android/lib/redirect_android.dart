@@ -37,7 +37,7 @@ class RedirectAndroidPlugin extends RedirectPlatform {
             nonce: nonce,
             url: url.toString(),
             callbackUrlScheme: androidOptions.callbackUrlScheme,
-            preferEphemeral: options.preferEphemeral,
+            preferEphemeral: androidOptions.preferEphemeral,
             timeoutMillis: options.timeout?.inMilliseconds,
             androidOptions: AndroidOptions(
               useCustomTabs: androidOptions.useCustomTabs,

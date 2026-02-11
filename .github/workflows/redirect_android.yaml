@@ -25,3 +25,39 @@ jobs:
       min_coverage: 0
       coverage_excludes: "**/*.g.dart"
 
+  # ───────────────────────────────────────────────────────────
+  # Native Kotlin unit tests (Robolectric + Mockito)
+  # ───────────────────────────────────────────────────────────
+
+  native-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: packages/redirect_android/android
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        working-directory: packages/redirect_android
+        run: flutter pub get
+
+      # The plugin's build.gradle needs the Flutter SDK and the example
+      # app's Gradle wrapper to resolve the Android plugin classpath.
+      - name: Run native Kotlin tests
+        working-directory: packages/redirect_android/android
+        run: |
+          # Use the example app's Gradle wrapper to run plugin tests
+          ../../redirect/example/android/gradlew testDebugUnitTest
+

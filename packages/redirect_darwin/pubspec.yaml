@@ -1,7 +1,7 @@
 name: redirect_darwin
 description: >-
   Shared iOS and macOS implementation of the redirect plugin.
-  Uses ASWebAuthenticationSession for secure OAuth and redirect flows.
+  Uses ASWebAuthenticationSession for secure redirect flows.
 version: 0.1.0
 repository: https://github.com/Bdaya-Dev/redirect/tree/main/packages/redirect_darwin
 topics:

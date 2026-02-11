@@ -8,7 +8,7 @@
 <h1 align="center">redirect</h1>
 
 <p align="center">
-  A cross-platform Dart &amp; Flutter plugin for redirect-based flows — OAuth, OIDC, payment gateways, and more.
+  A cross-platform Dart &amp; Flutter plugin for redirect-based flows.
 </p>
 
 <p align="center">
@@ -21,13 +21,13 @@
 
 ## What is redirect?
 
-**redirect** opens a URL (e.g. an OAuth authorization endpoint), waits for a callback redirect, and returns the result — all in a single, cross-platform API. It handles popup blockers on web, Custom Tabs on Android, `ASWebAuthenticationSession` on Apple platforms, and loopback HTTP servers on desktop.
+**redirect** opens a URL, waits for a callback redirect, and returns the result — all in a single, cross-platform API. It handles popup blockers on web, Custom Tabs on Android, `ASWebAuthenticationSession` on Apple platforms, and loopback HTTP servers on desktop.
 
 ```dart
 import 'package:redirect/redirect.dart';
 
 final handle = runRedirect(
-  url: Uri.parse('https://accounts.google.com/o/oauth2/v2/auth?...'),
+  url: Uri.parse('https://example.com/start?...'),
   callbackUrlScheme: 'myapp',
 );
 
@@ -36,7 +36,7 @@ final result = await handle.result;
 switch (result) {
   case RedirectSuccess(:final uri):
     final code = uri.queryParameters['code'];
-    // Exchange authorization code for tokens
+    // Handle the callback
   case RedirectCancelled():
     print('User cancelled');
   case RedirectFailure(:final error):
@@ -53,7 +53,7 @@ switch (result) {
 | macOS | `redirect_darwin` | ASWebAuthenticationSession |
 | Linux | `redirect_desktop` | Loopback HTTP server + system browser |
 | Windows | `redirect_desktop` | Loopback HTTP server + system browser |
-| Web | `redirect_web` | Popup / New tab / Same-page / Hidden iframe |
+| Web | `redirect_web` | Popup / New tab / Same-page / Iframe |
 | CLI (Dart) | `redirect_io` | Loopback HTTP server + system browser |
 
 ## Packages
@@ -100,9 +100,10 @@ dependencies:
 
 ### Web Setup
 
-Web requires a Service Worker to relay the callback URL.
-Run `dart run redirect_web_core:setup` and set `autoRegisterServiceWorker: true`
-in your `WebRedirectOptions`. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Web requires a callback page with `redirect_callback.js` to relay the
+callback URL via BroadcastChannel. Run `dart run redirect_web_core:setup`
+to copy the script to your `web/` directory, then include it on your
+callback page. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Key Concepts
 
@@ -125,11 +126,10 @@ in your `WebRedirectOptions`. See [CONTRIBUTING.md](CONTRIBUTING.md) for details
 
 ```dart
 runRedirect(
-  url: authUrl,
+  url: redirectUrl,
   callbackUrlScheme: 'myapp',
   options: RedirectOptions(
     timeout: Duration(minutes: 5),
-    preferEphemeral: true, // Private/incognito session
   ),
 );
 ```

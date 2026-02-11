@@ -76,13 +76,6 @@ melos:
         scope:
           - "redirect_web_core"
 
-    test:web-assets:chrome:
-      name: Web assets browser tests (JS execution in Chrome)
-      exec: dart test -p chrome test/redirect_web_assets_browser_test.dart
-      packageFilters:
-        scope:
-          - "redirect_web_core"
-
     test:jaspr:
       name: Jaspr integration tests (component + SSR)
       exec: dart test test/integration/redirect_jaspr_integration_test.dart
@@ -96,6 +89,72 @@ melos:
       packageFilters:
         scope:
           - "redirect_web_core"
+
+    test:native:android:
+      name: Android native unit tests (Kotlin + Robolectric)
+      description: >-
+        Runs native Kotlin unit tests via Gradle.
+        Requires Android SDK and JDK 17+.
+      exec: cd android && ../../../packages/redirect/example/android/gradlew testDebugUnitTest
+      packageFilters:
+        scope:
+          - "redirect_android"
+
+    test:integration:
+      name: All integration tests (platform)
+      description: >-
+        Runs the full e2e integration test suite.
+        Must specify a device with -d <device>.
+      exec: flutter test integration_test/redirect_e2e_test.dart
+      packageFilters:
+        scope:
+          - "redirect_example"
+
+    test:integration:android:
+      name: Android integration tests
+      description: Runs Android-specific integration tests on device/emulator.
+      exec: flutter test integration_test/redirect_android_test.dart
+      packageFilters:
+        scope:
+          - "redirect_example"
+
+    test:integration:darwin:
+      name: Darwin (iOS/macOS) integration tests
+      description: Runs Darwin-specific integration tests on device/simulator.
+      exec: flutter test integration_test/redirect_darwin_test.dart
+      packageFilters:
+        scope:
+          - "redirect_example"
+
+    test:integration:desktop:
+      name: Desktop (Linux/Windows) integration tests
+      description: Runs desktop-specific integration tests.
+      exec: flutter test integration_test/redirect_desktop_test.dart
+      packageFilters:
+        scope:
+          - "redirect_example"
+
+    test:integration:platform:
+      name: Platform UI integration tests (all platforms)
+      description: Runs the original platform UI + cancel tests.
+      exec: flutter test integration_test/redirect_platform_test.dart
+      packageFilters:
+        scope:
+          - "redirect_example"
+
+    test:integration:web:
+      name: Web integration tests (requires chromedriver)
+      description: >-
+        Runs web-specific integration tests via flutter drive.
+        Requires chromedriver on port 4444.
+      exec: >-
+        flutter drive
+        --driver=test_driver/integration_test.dart
+        --target=integration_test/redirect_web_integration_test.dart
+        -d web-server
+      packageFilters:
+        scope:
+          - "redirect_example"
 
     test:flutter:
       name: Flutter tests

@@ -28,11 +28,9 @@ void main() {
   RedirectOptions webOpts(
     WebRedirectOptions web, {
     Duration? timeout,
-    bool preferEphemeral = false,
   }) {
     return RedirectOptions(
       timeout: timeout,
-      preferEphemeral: preferEphemeral,
       platformOptions: {WebRedirectOptions.key: web},
     );
   }
@@ -60,7 +58,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
         ),
@@ -90,9 +88,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
-            iframeId: 'test_iframe_element',
+            iframeOptions: IframeOptions(id: 'test_iframe_element'),
           ),
         ),
       );
@@ -114,9 +112,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
-            iframeId: customId,
+            iframeOptions: IframeOptions(id: customId),
           ),
         ),
       );
@@ -131,7 +129,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
         ),
@@ -149,9 +147,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
-            iframeId: iframeId,
+            iframeOptions: IframeOptions(id: iframeId),
           ),
         ),
       );
@@ -180,9 +178,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
-            iframeId: iframeId,
+            iframeOptions: IframeOptions(id: iframeId),
           ),
         ),
       );
@@ -205,7 +203,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
           timeout: const Duration(milliseconds: 200),
@@ -223,7 +221,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
           timeout: const Duration(milliseconds: 500),
@@ -249,7 +247,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
           timeout: const Duration(milliseconds: 500),
@@ -277,9 +275,9 @@ void main() {
         url: url,
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
-            iframeId: iframeId,
+            iframeOptions: IframeOptions(id: iframeId),
           ),
         ),
       );
@@ -303,9 +301,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channel1,
-            iframeId: 'concurrent_iframe_1',
+            iframeOptions: IframeOptions(id: 'concurrent_iframe_1'),
           ),
         ),
       );
@@ -314,9 +312,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channel2,
-            iframeId: 'concurrent_iframe_2',
+            iframeOptions: IframeOptions(id: 'concurrent_iframe_2'),
           ),
         ),
       );
@@ -350,9 +348,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channel1,
-            iframeId: 'multi_scheme_iframe_1',
+            iframeOptions: IframeOptions(id: 'multi_scheme_iframe_1'),
           ),
         ),
       );
@@ -361,9 +359,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channel2,
-            iframeId: 'multi_scheme_iframe_2',
+            iframeOptions: IframeOptions(id: 'multi_scheme_iframe_2'),
           ),
         ),
       );
@@ -402,9 +400,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch1,
-            iframeId: 'triple_iframe_1',
+            iframeOptions: IframeOptions(id: 'triple_iframe_1'),
           ),
         ),
       );
@@ -412,9 +410,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch2,
-            iframeId: 'triple_iframe_2',
+            iframeOptions: IframeOptions(id: 'triple_iframe_2'),
           ),
         ),
       );
@@ -422,9 +420,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch3,
-            iframeId: 'triple_iframe_3',
+            iframeOptions: IframeOptions(id: 'triple_iframe_3'),
           ),
         ),
       );
@@ -465,9 +463,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch1,
-            iframeId: 'cancel_sibling_iframe_1',
+            iframeOptions: IframeOptions(id: 'cancel_sibling_iframe_1'),
           ),
         ),
       );
@@ -475,9 +473,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch2,
-            iframeId: 'cancel_sibling_iframe_2',
+            iframeOptions: IframeOptions(id: 'cancel_sibling_iframe_2'),
           ),
         ),
       );
@@ -510,8 +508,8 @@ void main() {
           timeout: Duration(milliseconds: 500),
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe,
-              iframeId: 'auto_chan_iframe_1',
+              mode: WebRedirectMode.iframe,
+              iframeOptions: IframeOptions(id: 'auto_chan_iframe_1'),
             ),
           },
         ),
@@ -523,8 +521,8 @@ void main() {
           timeout: Duration(milliseconds: 500),
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe,
-              iframeId: 'auto_chan_iframe_2',
+              mode: WebRedirectMode.iframe,
+              iframeOptions: IframeOptions(id: 'auto_chan_iframe_2'),
             ),
           },
         ),
@@ -688,7 +686,7 @@ void main() {
     test('hasPendingRedirect returns true when pending', () {
       web.window.sessionStorage
         ..setItem('redirect_pending', 'true')
-        ..setItem('redirect_pending_scheme', 'myapp');
+        ..setItem('redirect_callback_url', 'https://example.com/cb?code=123');
 
       expect(RedirectWeb.hasPendingRedirect(), isTrue);
     });
@@ -697,22 +695,24 @@ void main() {
       expect(RedirectWeb.resumePendingRedirect(), isNull);
     });
 
-    test('resumePendingRedirect returns success when scheme matches', () {
-      final currentScheme = Uri.base.scheme;
+    test('resumePendingRedirect returns success with stored URL', () {
+      const storedUrl = 'https://example.com/cb?code=abc&state=xyz';
 
       web.window.sessionStorage
         ..setItem('redirect_pending', 'true')
-        ..setItem('redirect_pending_scheme', currentScheme);
+        ..setItem('redirect_callback_url', storedUrl);
 
       final result = RedirectWeb.resumePendingRedirect();
       expect(result, isA<RedirectSuccess>());
-      expect((result! as RedirectSuccess).uri, equals(Uri.base));
+      expect(
+        (result! as RedirectSuccess).uri,
+        equals(Uri.parse(storedUrl)),
+      );
     });
 
-    test('resumePendingRedirect returns failure when scheme mismatches', () {
-      web.window.sessionStorage
-        ..setItem('redirect_pending', 'true')
-        ..setItem('redirect_pending_scheme', 'nonexistent_xyz_scheme');
+    test('resumePendingRedirect returns failure when no URL stored', () {
+      web.window.sessionStorage.setItem('redirect_pending', 'true');
+      // Intentionally NOT setting redirect_callback_url
 
       final result = RedirectWeb.resumePendingRedirect();
       expect(result, isA<RedirectFailure>());
@@ -721,7 +721,7 @@ void main() {
     test('resumePendingRedirect clears sessionStorage', () {
       web.window.sessionStorage
         ..setItem('redirect_pending', 'true')
-        ..setItem('redirect_pending_scheme', Uri.base.scheme);
+        ..setItem('redirect_callback_url', 'https://example.com/cb');
 
       RedirectWeb.resumePendingRedirect();
 
@@ -730,7 +730,7 @@ void main() {
         isNull,
       );
       expect(
-        web.window.sessionStorage.getItem('redirect_pending_scheme'),
+        web.window.sessionStorage.getItem('redirect_callback_url'),
         isNull,
       );
     });
@@ -738,7 +738,7 @@ void main() {
     test('clearPendingRedirect removes all pending state', () {
       web.window.sessionStorage
         ..setItem('redirect_pending', 'true')
-        ..setItem('redirect_pending_scheme', 'myapp');
+        ..setItem('redirect_callback_url', 'https://example.com/cb');
 
       RedirectWeb.clearPendingRedirect();
 
@@ -747,19 +747,32 @@ void main() {
         isNull,
       );
       expect(
-        web.window.sessionStorage.getItem('redirect_pending_scheme'),
+        web.window.sessionStorage.getItem('redirect_callback_url'),
         isNull,
       );
       expect(RedirectWeb.hasPendingRedirect(), isFalse);
     });
 
-    test('resumePendingRedirect accepts any URI when no scheme stored', () {
-      web.window.sessionStorage.setItem('redirect_pending', 'true');
-      // Intentionally NOT setting redirect_pending_scheme
+    test('resumePendingRedirect with callbackValidator', () {
+      web.window.sessionStorage
+        ..setItem('redirect_pending', 'true')
+        ..setItem('redirect_callback_url', 'https://example.com/cb?code=ok');
 
-      final result = RedirectWeb.resumePendingRedirect();
-      // Should accept any URI (backward compat)
+      final result = RedirectWeb.resumePendingRedirect(
+        callbackValidator: (uri) => uri.queryParameters['code'] == 'ok',
+      );
       expect(result, isA<RedirectSuccess>());
+    });
+
+    test('resumePendingRedirect fails when validator rejects', () {
+      web.window.sessionStorage
+        ..setItem('redirect_pending', 'true')
+        ..setItem('redirect_callback_url', 'https://example.com/cb?code=bad');
+
+      final result = RedirectWeb.resumePendingRedirect(
+        callbackValidator: (uri) => uri.queryParameters['code'] == 'ok',
+      );
+      expect(result, isA<RedirectFailure>());
     });
   });
 
@@ -768,13 +781,12 @@ void main() {
   // ─────────────────────────────────────────────────
 
   group('handleCallback >', () {
-    test('broadcasts to all registered channels for a scheme', () async {
+    test('broadcasts to all registered channels', () async {
       const ch1 = 'test_hcb_ch1';
       const ch2 = 'test_hcb_ch2';
-      const scheme = 'myapp';
 
       web.window.localStorage.setItem(
-        'redirect_channels_$scheme',
+        'redirect_channels',
         jsonEncode([ch1, ch2]),
       );
 
@@ -827,7 +839,7 @@ void main() {
 
     test('handles empty channel list gracefully', () {
       // No channels registered — should not throw
-      web.window.localStorage.removeItem('redirect_channels_myapp');
+      web.window.localStorage.removeItem('redirect_channels');
 
       expect(
         () => RedirectWeb.handleCallback(Uri.parse('myapp://callback')),
@@ -837,7 +849,7 @@ void main() {
 
     test('handles malformed localStorage gracefully', () {
       // Corrupt localStorage value
-      web.window.localStorage.setItem('redirect_channels_myapp', 'not-json');
+      web.window.localStorage.setItem('redirect_channels', 'not-json');
 
       expect(
         () => RedirectWeb.handleCallback(Uri.parse('myapp://callback')),
@@ -858,14 +870,14 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
         ),
       );
 
       final raw = web.window.localStorage.getItem(
-        'redirect_channels_testscheme',
+        'redirect_channels',
       );
       expect(raw, isNotNull);
       final channels = (jsonDecode(raw!) as List<dynamic>).cast<String>();
@@ -881,7 +893,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
         ),
@@ -892,7 +904,7 @@ void main() {
       await handle.result;
 
       final raw = web.window.localStorage.getItem(
-        'redirect_channels_cleanscheme',
+        'redirect_channels',
       );
       if (raw != null) {
         final channels = (jsonDecode(raw) as List<dynamic>).cast<String>();
@@ -908,9 +920,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch1,
-            iframeId: 'reg_multi_1',
+            iframeOptions: IframeOptions(id: 'reg_multi_1'),
           ),
         ),
       );
@@ -919,14 +931,14 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch2,
-            iframeId: 'reg_multi_2',
+            iframeOptions: IframeOptions(id: 'reg_multi_2'),
           ),
         ),
       );
 
-      final raw = web.window.localStorage.getItem('redirect_channels_shared');
+      final raw = web.window.localStorage.getItem('redirect_channels');
       expect(raw, isNotNull);
       final channels = (jsonDecode(raw!) as List<dynamic>).cast<String>();
       expect(channels, contains(ch1));
@@ -953,9 +965,9 @@ void main() {
         options: const RedirectOptions(
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe,
+              mode: WebRedirectMode.iframe,
               broadcastChannelName: 'test_platform_opts',
-              iframeId: 'platform_opts_iframe',
+              iframeOptions: IframeOptions(id: 'platform_opts_iframe'),
             ),
           },
         ),
@@ -981,7 +993,7 @@ void main() {
         url: url,
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
         ),
@@ -1000,7 +1012,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
         ),
@@ -1016,29 +1028,10 @@ void main() {
     });
   });
 
-  // ─────────────────────────────────────────────────
-  // Service Worker helpers
-  // ─────────────────────────────────────────────────
-
-  group('Service Worker helpers >', () {
-    test('registerServiceWorker does not throw', () async {
-      // In test environment, SW registration may fail silently or succeed
-      // depending on the test runner. We just verify it doesn't throw.
-      try {
-        await RedirectWeb.registerServiceWorker(
-          scriptUrl: 'nonexistent_sw.js',
-          callbackPath: '/callback.html',
-        );
-      } on Object {
-        // Expected: SW registration fails in test env — that's fine.
-      }
-    });
-
-    test('closeWindow does not throw', () {
-      // Just verify the static helper doesn't crash.
-      // In a test, window.close() is typically a no-op.
-      expect(RedirectWeb.closeWindow, returnsNormally);
-    });
+  test('closeWindow does not throw', () {
+    // Just verify the static helper doesn't crash.
+    // In a test, window.close() is typically a no-op.
+    expect(RedirectWeb.closeWindow, returnsNormally);
   });
 
   // ─────────────────────────────────────────────────
@@ -1051,9 +1044,9 @@ void main() {
       const ch2 = 'test_multi_hcb_2';
       const ch3 = 'test_multi_hcb_3';
 
-      // Register three channels for the same scheme
+      // Register three channels
       web.window.localStorage.setItem(
-        'redirect_channels_myapp',
+        'redirect_channels',
         jsonEncode([ch1, ch2, ch3]),
       );
 
@@ -1106,9 +1099,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch1,
-            iframeId: 'isolated_hcb_iframe_1',
+            iframeOptions: IframeOptions(id: 'isolated_hcb_iframe_1'),
           ),
         ),
       );
@@ -1116,9 +1109,9 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: ch2,
-            iframeId: 'isolated_hcb_iframe_2',
+            iframeOptions: IframeOptions(id: 'isolated_hcb_iframe_2'),
           ),
           timeout: const Duration(milliseconds: 500),
         ),
@@ -1178,7 +1171,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
         ),
@@ -1208,7 +1201,7 @@ void main() {
         url: Uri.parse('about:blank'),
         options: webOpts(
           const WebRedirectOptions(
-            mode: WebRedirectMode.hiddenIframe,
+            mode: WebRedirectMode.iframe,
             broadcastChannelName: channelName,
           ),
         ),
@@ -1217,7 +1210,7 @@ void main() {
       await _nextTick();
 
       // Verify the channel is registered in localStorage
-      final raw = web.window.localStorage.getItem('redirect_channels_myapp');
+      final raw = web.window.localStorage.getItem('redirect_channels');
       expect(raw, isNotNull);
       expect(
         (jsonDecode(raw!) as List<dynamic>).cast<String>(),
@@ -1257,7 +1250,7 @@ void _cleanupStorage() {
 
   web.window.sessionStorage
     ..removeItem('redirect_pending')
-    ..removeItem('redirect_pending_scheme');
+    ..removeItem('redirect_callback_url');
 }
 
 /// Remove all iframes created during tests.

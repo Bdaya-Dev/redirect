@@ -24,3 +24,17 @@ jobs:
       working_directory: packages/redirect_darwin
       min_coverage: 0
       coverage_excludes: "**/*.g.dart"
+
+  # ───────────────────────────────────────────────────────────
+  # Native Swift unit tests (Swift Testing via Package.swift)
+  # ───────────────────────────────────────────────────────────
+
+  native-tests:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run native Swift tests
+        working-directory: packages/redirect_darwin/darwin/redirect_darwin
+        run: swift test

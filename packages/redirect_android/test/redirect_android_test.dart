@@ -34,6 +34,13 @@ class FakeRedirectHostApi implements RedirectHostApi {
     cancelCalled = true;
     lastCancelledNonce = nonce;
   }
+
+  bool supportsCustomTabsResult = true;
+
+  @override
+  Future<bool> supportsCustomTabs() async {
+    return supportsCustomTabsResult;
+  }
 }
 
 void main() {
@@ -83,7 +90,14 @@ void main() {
     test('run passes preferEphemeral option', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        options: defaultAndroidOptions.copyWith(preferEphemeral: true),
+        options: const RedirectOptions(
+          platformOptions: {
+            AndroidRedirectOptions.key: AndroidRedirectOptions(
+              callbackUrlScheme: 'myapp',
+              preferEphemeral: true,
+            ),
+          },
+        ),
       );
       await handle.result;
 

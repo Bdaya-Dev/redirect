@@ -13,6 +13,7 @@ class IosRedirectOptions extends DarwinRedirectOptions {
   /// Creates iOS redirect options.
   const IosRedirectOptions({
     required super.callback,
+    super.preferEphemeral,
     super.additionalHeaderFields,
   });
 

@@ -54,7 +54,7 @@ abstract class RedirectDarwinBase extends RedirectPlatform {
             nonce: nonce,
             url: url.toString(),
             callback: callbackMessage,
-            preferEphemeral: options.preferEphemeral,
+            preferEphemeral: darwinOptions.preferEphemeral,
             timeoutMillis: options.timeout?.inMilliseconds,
             additionalHeaderFields:
                 darwinOptions.additionalHeaderFields,

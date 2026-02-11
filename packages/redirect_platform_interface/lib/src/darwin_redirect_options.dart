@@ -11,6 +11,7 @@ class DarwinRedirectOptions {
   /// Creates Darwin redirect options.
   const DarwinRedirectOptions({
     required this.callback,
+    this.preferEphemeral = false,
     this.additionalHeaderFields,
   });
 
@@ -27,6 +28,15 @@ class DarwinRedirectOptions {
   /// )
   /// ```
   final CallbackConfig callback;
+
+  /// Whether to prefer a private/ephemeral browser session.
+  ///
+  /// When true, sets `prefersEphemeralWebBrowserSession` to true on
+  /// `ASWebAuthenticationSession`, preventing cookie and session data
+  /// from being shared with Safari.
+  ///
+  /// Defaults to `false` to allow SSO and session reuse.
+  final bool preferEphemeral;
 
   /// Additional HTTP header fields to set when loading the initial URL.
   ///

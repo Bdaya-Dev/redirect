@@ -16,8 +16,6 @@
 ///     platformOptions: {
 ///       WebRedirectOptions.key: WebRedirectOptions(
 ///         mode: WebRedirectMode.popup,
-///         callbackPath: '/callback.html',
-///         autoRegisterServiceWorker: true,
 ///       ),
 ///     },
 ///   ),
@@ -29,4 +27,3 @@ library;
 export 'package:redirect_core/redirect_core.dart'
     show WebRedirectMode, WebRedirectOptions;
 export 'src/redirect_web.dart';
-export 'src/redirect_web_assets.dart';

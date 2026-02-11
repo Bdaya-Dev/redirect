@@ -291,7 +291,6 @@ void main() {
           redirectUrl: Uri.parse('https://example.com/auth'),
           options: const RedirectOptions(
             timeout: Duration(seconds: 30),
-            preferEphemeral: true,
           ),
         ),
       );

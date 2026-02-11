@@ -34,7 +34,10 @@ flutter run -d ios
 | Option            | Description                                                 |
 | ----------------- | ----------------------------------------------------------- |
 | `timeout`         | Maximum time to wait for callback (cancels if exceeded)     |
-| `preferEphemeral` | Use private/incognito browsing when available               |
+
+### Platform-Specific Ephemeral Sessions
+
+`preferEphemeral` is available on `AndroidRedirectOptions` (Ephemeral Custom Tabs, Chrome 136+) and `IosRedirectOptions` / `MacosRedirectOptions` (private ASWebAuthenticationSession).
 
 ### Web-Specific Options (`WebRedirectOptions`)
 
@@ -45,7 +48,7 @@ When running on web, additional options are available:
 | **Popup Window**  | Opens a centered popup (default). Customize width/height.   |
 | **New Tab**       | Opens in a new browser tab                                  |
 | **Same Page**     | Navigates the current page away (returns `RedirectPending`) |
-| **Hidden Iframe** | For silent refresh (may be blocked by CSP)                  |
+| **Iframe**        | Opens in an iframe (hidden by default, may be blocked by CSP) |
 
 ### Result Types
 
@@ -58,10 +61,10 @@ When running on web, additional options are available:
 
 ## Testing the Redirect Flow
 
-The example uses httpbin.org to simulate a redirect (OAuth is a common use case):
+The example uses httpbin.org to simulate a redirect:
 
 - **Desktop/Mobile**: Redirects to `myapp://callback?code=test123`
-- **Web**: Redirects to `callback.html`; the Service Worker broadcasts the result
+- **Web**: Redirects to the bundled `redirect_callback.html` asset; the callback script broadcasts the result
 
 ## Platform Configuration
 
@@ -71,4 +74,4 @@ The `myapp://` custom URL scheme is pre-configured:
 - **iOS**: [Info.plist](ios/Runner/Info.plist) (`CFBundleURLTypes`)
 - **macOS**: [Info.plist](macos/Runner/Info.plist) (`CFBundleURLTypes`)
 - **Windows/Linux**: Uses loopback HTTP server (no URL scheme needed)
-- **Web**: Uses [callback.html](web/callback.html) and the Service Worker
+- **Web**: Uses the bundled `redirect_callback.html` asset from the `redirect_web` package (no manual setup)

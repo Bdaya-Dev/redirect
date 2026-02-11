@@ -18,9 +18,9 @@ Core types and interfaces for the [redirect](https://pub.dev/packages/redirect) 
 |------|-------------|
 | `RedirectHandler` | Abstract interface that platform implementations must satisfy |
 | `RedirectHandle` | Handle to a pending redirect (holds `result` future + `cancel()`) |
-| `RedirectOptions` | Configuration: `timeout`, `preferEphemeral`, `platformOptions` |
+| `RedirectOptions` | Configuration: `timeout`, `platformOptions` |
 | `RedirectResult` | Sealed class: `RedirectSuccess`, `RedirectCancelled`, `RedirectPending`, `RedirectFailure` |
-| `WebRedirectMode` | Enum: `popup`, `newTab`, `samePage`, `hiddenIframe` |
+| `WebRedirectMode` | Enum: `popup`, `newTab`, `samePage`, `iframe` |
 | `WebRedirectOptions` | Web-specific configuration (popup size, iframe ID, etc.) |
 
 ## When to use this package

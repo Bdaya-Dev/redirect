@@ -4,7 +4,7 @@
 /// Example demonstrating redirect_desktop usage.
 ///
 /// This is the Linux/Windows implementation of the redirect plugin.
-/// Uses a loopback HTTP server to capture OAuth redirect callbacks.
+/// Uses a loopback HTTP server to capture redirect callbacks.
 /// Typically used through the `redirect` package which automatically
 /// selects the correct platform implementation.
 ///

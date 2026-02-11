@@ -4,6 +4,7 @@ import 'package:redirect_web_core/redirect_web_core.dart' as core;
 // Re-export web-specific types for convenience
 export 'package:redirect_web_core/redirect_web_core.dart'
     show RedirectWeb, WebRedirectMode, WebRedirectOptions;
+export 'src/redirect_web_assets.dart';
 
 /// The Flutter web implementation of [RedirectPlatform].
 ///

@@ -14,6 +14,7 @@ class MacosRedirectOptions extends DarwinRedirectOptions {
   const MacosRedirectOptions({
     required super.callback,
     super.additionalHeaderFields,
+    super.preferEphemeral,
   });
 
   /// The key used in [RedirectOptions.platformOptions].

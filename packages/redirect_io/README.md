@@ -15,7 +15,7 @@ Pure Dart IO implementation of redirect-based flows. Ideal for **command-line to
 ## How it works
 
 1. Starts a temporary loopback HTTP server on `127.0.0.1`.
-2. Opens the authorization URL in the system's default browser.
+2. Opens the target URL in the system's default browser.
 3. Waits for the callback redirect to the loopback server.
 4. Returns the callback URI as a `RedirectSuccess`.
 

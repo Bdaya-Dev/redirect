@@ -1,11 +1,15 @@
 package com.bdayadev
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.browser.customtabs.CustomTabColorSchemeParams
+import androidx.browser.customtabs.CustomTabsClient
 import androidx.browser.customtabs.CustomTabsIntent
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -21,21 +25,27 @@ private data class PendingRedirect(
     var timeoutRunnable: Runnable? = null,
 )
 
-class RedirectPlugin : FlutterPlugin, ActivityAware, PluginRegistry.NewIntentListener,
-    RedirectHostApi {
-    private var activity: Activity? = null
-    private var activityBinding: ActivityPluginBinding? = null
-
-    /** All in-flight redirects, keyed by nonce. */
-    private val pendingRedirects = mutableMapOf<String, PendingRedirect>()
-
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        RedirectHostApi.setUp(flutterPluginBinding.binaryMessenger, this)
+/**
+ * The core redirect launcher, separated from [RedirectPlugin] for testability.
+ *
+ * Implements the Pigeon-defined [RedirectHostApi] interface and handles all
+ * browser-launching logic (Custom Tabs / plain intents) and callback matching.
+ */
+internal class RedirectLauncher(
+    private val applicationContext: android.content.Context,
+) : RedirectHostApi {
+    private companion object {
+        const val TAG = "RedirectLauncher"
     }
 
-    // -- RedirectHostApi (Pigeon) --
+    @VisibleForTesting
+    internal var activity: Activity? = null
+
+    /** All in-flight redirects, keyed by nonce. */
+    @VisibleForTesting
+    internal val pendingRedirects = mutableMapOf<String, PendingRedirect>()
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun run(request: RunRequest, callback: (Result<String?>) -> Unit) {
         val url = Uri.parse(request.url)
@@ -74,27 +84,43 @@ class RedirectPlugin : FlutterPlugin, ActivityAware, PluginRegistry.NewIntentLis
 
         pendingRedirects[nonce] = pending
 
-        if (useCustomTabs) {
-            val builder = CustomTabsIntent.Builder()
-                .setShowTitle(showTitle)
-                .setUrlBarHidingEnabled(enableUrlBarHiding)
+        try {
+            if (useCustomTabs) {
+                val builder = CustomTabsIntent.Builder()
+                    .setShowTitle(showTitle)
+                    .setUrlBarHidingEnabled(enableUrlBarHiding)
 
-            if (toolbarColor != null || secondaryToolbarColor != null) {
-                val colorParams = CustomTabColorSchemeParams.Builder()
-                if (toolbarColor != null) {
-                    colorParams.setToolbarColor(toolbarColor)
+                if (request.preferEphemeral) {
+                    builder.setEphemeralBrowsingEnabled(true)
                 }
-                if (secondaryToolbarColor != null) {
-                    colorParams.setSecondaryToolbarColor(secondaryToolbarColor)
+
+                if (toolbarColor != null || secondaryToolbarColor != null) {
+                    val colorParams = CustomTabColorSchemeParams.Builder()
+                    if (toolbarColor != null) {
+                        colorParams.setToolbarColor(toolbarColor)
+                    }
+                    if (secondaryToolbarColor != null) {
+                        colorParams.setSecondaryToolbarColor(secondaryToolbarColor)
+                    }
+                    builder.setDefaultColorSchemeParams(colorParams.build())
                 }
-                builder.setDefaultColorSchemeParams(colorParams.build())
+
+                val customTabsIntent = builder.build()
+                customTabsIntent.launchUrl(currentActivity, url)
+            } else {
+                val intent = Intent(Intent.ACTION_VIEW, url)
+                currentActivity.startActivity(intent)
             }
-
-            val customTabsIntent = builder.build()
-            customTabsIntent.launchUrl(currentActivity, url)
-        } else {
-            val intent = Intent(Intent.ACTION_VIEW, url)
-            currentActivity.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            // No browser/handler found — fail immediately instead of leaving
+            // the redirect dangling.
+            pendingRedirects.remove(nonce)
+            pending.timeoutRunnable?.let { mainHandler.removeCallbacks(it) }
+            callback(Result.failure(FlutterError(
+                "ACTIVITY_NOT_FOUND",
+                "No activity found to handle URL: ${request.url}",
+                null
+            )))
         }
     }
 
@@ -106,24 +132,32 @@ class RedirectPlugin : FlutterPlugin, ActivityAware, PluginRegistry.NewIntentLis
         }
     }
 
+    override fun supportsCustomTabs(): Boolean {
+        return CustomTabsClient.getPackageName(applicationContext, emptyList()) != null
+    }
+
     /** Cancels a single redirect operation by nonce. */
-    private fun cancelByNonce(nonce: String) {
+    @VisibleForTesting
+    internal fun cancelByNonce(nonce: String) {
         val pending = pendingRedirects.remove(nonce) ?: return
         pending.timeoutRunnable?.let { mainHandler.removeCallbacks(it) }
         pending.callback.invoke(Result.success(null))
     }
 
     /** Cancels all pending redirect operations. */
-    private fun cancelAll() {
+    internal fun cancelAll() {
         val allNonces = pendingRedirects.keys.toList()
         for (n in allNonces) {
             cancelByNonce(n)
         }
     }
 
-    // -- Intent handling --
-
-    override fun onNewIntent(intent: Intent): Boolean {
+    /**
+     * Called when a new intent arrives.
+     * Matches the intent's URI scheme against pending redirects.
+     * Returns `true` if a matching redirect was found and completed.
+     */
+    fun onNewIntent(intent: Intent): Boolean {
         val data = intent.data ?: return false
         val scheme = data.scheme ?: return false
 
@@ -140,11 +174,39 @@ class RedirectPlugin : FlutterPlugin, ActivityAware, PluginRegistry.NewIntentLis
         pending.callback.invoke(Result.success(data.toString()))
         return true
     }
+}
+
+/**
+ * Flutter plugin entry point for Android redirects.
+ *
+ * Manages the [FlutterPlugin] and [ActivityAware] lifecycle, delegating
+ * all redirect logic to [RedirectLauncher].
+ */
+class RedirectPlugin : FlutterPlugin, ActivityAware, PluginRegistry.NewIntentListener {
+    private var launcher: RedirectLauncher? = null
+    private var activityBinding: ActivityPluginBinding? = null
+
+    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        val l = RedirectLauncher(flutterPluginBinding.applicationContext)
+        launcher = l
+        RedirectHostApi.setUp(flutterPluginBinding.binaryMessenger, l)
+    }
+
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        RedirectHostApi.setUp(binding.binaryMessenger, null)
+        launcher = null
+    }
+
+    // -- Intent handling --
+
+    override fun onNewIntent(intent: Intent): Boolean {
+        return launcher?.onNewIntent(intent) ?: false
+    }
 
     // -- Activity lifecycle --
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        activity = binding.activity
+        launcher?.activity = binding.activity
         activityBinding = binding
         binding.addOnNewIntentListener(this)
     }
@@ -152,14 +214,14 @@ class RedirectPlugin : FlutterPlugin, ActivityAware, PluginRegistry.NewIntentLis
     override fun onDetachedFromActivityForConfigChanges() {
         activityBinding?.removeOnNewIntentListener(this)
         activityBinding = null
-        activity = null
+        launcher?.activity = null
         // Don't cancel pending operations during config changes —
         // the activity will be re-attached shortly and the intent
         // listener will be re-registered.
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        activity = binding.activity
+        launcher?.activity = binding.activity
         activityBinding = binding
         binding.addOnNewIntentListener(this)
     }
@@ -167,13 +229,9 @@ class RedirectPlugin : FlutterPlugin, ActivityAware, PluginRegistry.NewIntentLis
     override fun onDetachedFromActivity() {
         // Cancel all pending redirects — there's no activity to receive
         // the callback intent anymore.
-        cancelAll()
+        launcher?.cancelAll()
         activityBinding?.removeOnNewIntentListener(this)
         activityBinding = null
-        activity = null
-    }
-
-    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        RedirectHostApi.setUp(binding.binaryMessenger, null)
+        launcher?.activity = null
     }
 }

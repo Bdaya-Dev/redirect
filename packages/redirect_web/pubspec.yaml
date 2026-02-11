@@ -23,12 +23,16 @@ flutter:
       web:
         pluginClass: RedirectWebPlugin
         fileName: redirect_web.dart
+  assets:
+    - assets/redirect_callback.js
+    - assets/redirect_callback.html
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
+  redirect_core: ^0.1.0
   redirect_platform_interface: ^0.1.0
   redirect_web_core: ^0.1.0
 

@@ -1,7 +1,7 @@
 /// Example demonstrating redirect_darwin usage.
 ///
 /// This is the shared iOS/macOS implementation of the redirect plugin
-/// using ASWebAuthenticationSession for secure OAuth flows.
+/// using ASWebAuthenticationSession for secure redirect flows.
 /// Typically used through the `redirect` package which automatically
 /// selects the correct platform implementation.
 ///
@@ -22,7 +22,14 @@
 /// final handle = redirect.run(
 ///   url: authUrl,
 ///   callbackUrlScheme: 'myapp',
-///   options: RedirectOptions(preferEphemeral: true),
+///   options: RedirectOptions(
+///     platformOptions: {
+///       IosRedirectOptions.key: IosRedirectOptions(
+///         callback: CallbackConfig.customScheme('myapp'),
+///         preferEphemeral: true,
+///       ),
+///     },
+///   ),
 /// );
 /// ```
 library;

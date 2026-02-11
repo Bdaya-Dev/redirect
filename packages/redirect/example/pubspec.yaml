@@ -12,6 +12,9 @@ dependencies:
   flutter:
     sdk: flutter
   redirect: ^0.1.0
+  redirect_core: ^0.1.0
+  redirect_web_core: ^0.1.0
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_driver:
@@ -21,9 +24,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   redirect_platform_interface: ^0.1.0
-  redirect_web_core: ^0.1.0
   very_good_analysis: ^10.1.0
-  web: ^1.1.0
 
 flutter:
   uses-material-design: true

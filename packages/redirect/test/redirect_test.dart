@@ -74,7 +74,6 @@ void main() {
 
       const options = RedirectOptions(
         timeout: Duration(seconds: 30),
-        preferEphemeral: true,
       );
 
       runRedirect(url: testUrl, options: options);
@@ -242,8 +241,7 @@ void main() {
       expect(result2, isA<RedirectCancelled>());
     });
 
-    test('handles with different platform options work concurrently',
-        () async {
+    test('handles with different platform options work concurrently', () async {
       when(
         () => mockPlatform.run(
           url: any(named: 'url'),
@@ -288,9 +286,11 @@ void main() {
         options: const RedirectOptions(
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe,
-              popupWidth: 400,
-              popupHeight: 600,
+              mode: WebRedirectMode.iframe,
+              popupOptions: PopupOptions(
+                width: 400,
+                height: 600,
+              ),
             ),
           },
         ),
@@ -314,7 +314,6 @@ void main() {
         url: Uri.parse('https://example.com/auth'),
         options: const RedirectOptions(
           timeout: Duration(seconds: 30),
-          preferEphemeral: true,
         ),
         result: Future.value(const RedirectCancelled()),
         cancel: () async {},
@@ -322,7 +321,6 @@ void main() {
 
       expect(handle.url, equals(Uri.parse('https://example.com/auth')));
       expect(handle.options.timeout, equals(const Duration(seconds: 30)));
-      expect(handle.options.preferEphemeral, isTrue);
     });
 
     test('auto-generates a unique nonce', () {
@@ -393,6 +391,365 @@ void main() {
       final result = await handle.result;
       expect(result, isA<RedirectCancelled>());
       expect(cancelCount, equals(3)); // cancel() called 3 times
+    });
+  });
+
+  group('constructRedirectUrl', () {
+    tearDown(() {
+      debugRedirectPlatformTypeOverride = null;
+    });
+
+    final fallbackUrl = Uri.parse('https://example.com/fallback');
+    final androidUrl = Uri.parse('https://example.com/android');
+    final iosUrl = Uri.parse('https://example.com/ios');
+    final macosUrl = Uri.parse('https://example.com/macos');
+    final darwinUrl = Uri.parse('https://example.com/darwin');
+    final linuxUrl = Uri.parse('https://example.com/linux');
+    final windowsUrl = Uri.parse('https://example.com/windows');
+    final desktopUrl = Uri.parse('https://example.com/desktop');
+    final webUrl = Uri.parse('https://example.com/web');
+    final mobileUrl = Uri.parse('https://example.com/mobile');
+
+    test('uses fallback when no platform-specific builder is provided', () {
+      debugRedirectPlatformTypeOverride = RedirectPlatformType.android;
+
+      final (:url, :options) = constructRedirectUrl(
+        fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+      );
+
+      expect(url, equals(fallbackUrl));
+      expect(options.platformOptions, isEmpty);
+    });
+
+    group('Android resolution: onAndroid > onMobile > fallback', () {
+      setUp(() {
+        debugRedirectPlatformTypeOverride = RedirectPlatformType.android;
+      });
+
+      test('uses onAndroid when provided', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onAndroid: (_) => RedirectUrlConfig(url: androidUrl),
+          onMobile: (_) => RedirectUrlConfig(url: mobileUrl),
+        );
+
+        expect(url, equals(androidUrl));
+      });
+
+      test('falls back to onMobile', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onMobile: (_) => RedirectUrlConfig(url: mobileUrl),
+        );
+
+        expect(url, equals(mobileUrl));
+      });
+
+      test('falls back to fallback', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+        );
+
+        expect(url, equals(fallbackUrl));
+      });
+    });
+
+    group('iOS resolution: onIos > onDarwin > onMobile > fallback', () {
+      setUp(() {
+        debugRedirectPlatformTypeOverride = RedirectPlatformType.ios;
+      });
+
+      test('uses onIos when provided', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onIos: (_) => RedirectUrlConfig(url: iosUrl),
+          onDarwin: (_) => RedirectUrlConfig(url: darwinUrl),
+          onMobile: (_) => RedirectUrlConfig(url: mobileUrl),
+        );
+
+        expect(url, equals(iosUrl));
+      });
+
+      test('falls back to onDarwin', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onDarwin: (_) => RedirectUrlConfig(url: darwinUrl),
+          onMobile: (_) => RedirectUrlConfig(url: mobileUrl),
+        );
+
+        expect(url, equals(darwinUrl));
+      });
+
+      test('falls back to onMobile', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onMobile: (_) => RedirectUrlConfig(url: mobileUrl),
+        );
+
+        expect(url, equals(mobileUrl));
+      });
+
+      test('falls back to fallback', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+        );
+
+        expect(url, equals(fallbackUrl));
+      });
+    });
+
+    group('macOS resolution: onMacos > onDarwin > fallback', () {
+      setUp(() {
+        debugRedirectPlatformTypeOverride = RedirectPlatformType.macos;
+      });
+
+      test('uses onMacos when provided', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onMacos: (_) => RedirectUrlConfig(url: macosUrl),
+          onDarwin: (_) => RedirectUrlConfig(url: darwinUrl),
+        );
+
+        expect(url, equals(macosUrl));
+      });
+
+      test('falls back to onDarwin', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onDarwin: (_) => RedirectUrlConfig(url: darwinUrl),
+        );
+
+        expect(url, equals(darwinUrl));
+      });
+
+      test('does not fall back to onMobile', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onMobile: (_) => RedirectUrlConfig(url: mobileUrl),
+        );
+
+        expect(url, equals(fallbackUrl));
+      });
+    });
+
+    group('Linux resolution: onLinux > onDesktop > fallback', () {
+      setUp(() {
+        debugRedirectPlatformTypeOverride = RedirectPlatformType.linux;
+      });
+
+      test('uses onLinux when provided', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onLinux: (_) => RedirectUrlConfig(url: linuxUrl),
+          onDesktop: (_) => RedirectUrlConfig(url: desktopUrl),
+        );
+
+        expect(url, equals(linuxUrl));
+      });
+
+      test('falls back to onDesktop', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onDesktop: (_) => RedirectUrlConfig(url: desktopUrl),
+        );
+
+        expect(url, equals(desktopUrl));
+      });
+    });
+
+    group('Windows resolution: onWindows > onDesktop > fallback', () {
+      setUp(() {
+        debugRedirectPlatformTypeOverride = RedirectPlatformType.windows;
+      });
+
+      test('uses onWindows when provided', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onWindows: (_) => RedirectUrlConfig(url: windowsUrl),
+          onDesktop: (_) => RedirectUrlConfig(url: desktopUrl),
+        );
+
+        expect(url, equals(windowsUrl));
+      });
+
+      test('falls back to onDesktop', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onDesktop: (_) => RedirectUrlConfig(url: desktopUrl),
+        );
+
+        expect(url, equals(desktopUrl));
+      });
+    });
+
+    group('Web resolution: onWeb > fallback', () {
+      setUp(() {
+        debugRedirectPlatformTypeOverride = RedirectPlatformType.web;
+      });
+
+      test('uses onWeb when provided', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onWeb: (_) => RedirectUrlConfig(url: webUrl),
+        );
+
+        expect(url, equals(webUrl));
+      });
+
+      test('falls back to fallback', () {
+        final (:url, options: _) = constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+        );
+
+        expect(url, equals(fallbackUrl));
+      });
+    });
+
+    test('passes the correct platform type to the builder', () {
+      debugRedirectPlatformTypeOverride = RedirectPlatformType.ios;
+      RedirectPlatformType? received;
+
+      constructRedirectUrl(
+        fallback: (platform) {
+          received = platform;
+          return RedirectUrlConfig(url: fallbackUrl);
+        },
+      );
+
+      expect(received, equals(RedirectPlatformType.ios));
+    });
+
+    test('onDarwin receives the specific platform (ios vs macos)', () {
+      final received = <RedirectPlatformType>[];
+
+      for (final p in [RedirectPlatformType.ios, RedirectPlatformType.macos]) {
+        debugRedirectPlatformTypeOverride = p;
+        constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onDarwin: (platform) {
+            received.add(platform);
+            return RedirectUrlConfig(url: darwinUrl);
+          },
+        );
+      }
+
+      expect(received, [RedirectPlatformType.ios, RedirectPlatformType.macos]);
+    });
+
+    test('onDesktop receives the specific platform (linux vs windows)', () {
+      final received = <RedirectPlatformType>[];
+
+      for (final p in [
+        RedirectPlatformType.linux,
+        RedirectPlatformType.windows,
+      ]) {
+        debugRedirectPlatformTypeOverride = p;
+        constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onDesktop: (platform) {
+            received.add(platform);
+            return RedirectUrlConfig(url: desktopUrl);
+          },
+        );
+      }
+
+      expect(
+        received,
+        [RedirectPlatformType.linux, RedirectPlatformType.windows],
+      );
+    });
+
+    test('onMobile receives the specific platform (android vs ios)', () {
+      final received = <RedirectPlatformType>[];
+
+      for (final p in [
+        RedirectPlatformType.android,
+        RedirectPlatformType.ios,
+      ]) {
+        debugRedirectPlatformTypeOverride = p;
+        constructRedirectUrl(
+          fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+          onMobile: (platform) {
+            received.add(platform);
+            return RedirectUrlConfig(url: mobileUrl);
+          },
+        );
+      }
+
+      expect(
+        received,
+        [RedirectPlatformType.android, RedirectPlatformType.ios],
+      );
+    });
+
+    test('applies timeout from top-level params', () {
+      debugRedirectPlatformTypeOverride = RedirectPlatformType.android;
+
+      final (:url, :options) = constructRedirectUrl(
+        fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+        timeout: const Duration(minutes: 5),
+      );
+
+      expect(options.timeout, equals(const Duration(minutes: 5)));
+    });
+
+    test('config timeout overrides top-level default', () {
+      debugRedirectPlatformTypeOverride = RedirectPlatformType.android;
+
+      final (:url, :options) = constructRedirectUrl(
+        fallback: (_) => RedirectUrlConfig(
+          url: fallbackUrl,
+          timeout: const Duration(seconds: 30),
+        ),
+        timeout: const Duration(minutes: 5),
+      );
+
+      // Config timeout wins over top-level timeout
+      expect(options.timeout, equals(const Duration(seconds: 30)));
+    });
+
+    test('defaults to no timeout', () {
+      debugRedirectPlatformTypeOverride = RedirectPlatformType.android;
+
+      final (:url, :options) = constructRedirectUrl(
+        fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+      );
+
+      expect(options.timeout, isNull);
+    });
+
+    test('includes platform options from the config', () {
+      debugRedirectPlatformTypeOverride = RedirectPlatformType.android;
+
+      const androidOptions = AndroidRedirectOptions(
+        callbackUrlScheme: 'myapp',
+        showTitle: true,
+      );
+
+      final (:url, :options) = constructRedirectUrl(
+        fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+        onAndroid: (_) => RedirectUrlConfig(
+          url: androidUrl,
+          platformOptions: {AndroidRedirectOptions.key: androidOptions},
+        ),
+      );
+
+      expect(
+        options.getPlatformOption<AndroidRedirectOptions>(
+          AndroidRedirectOptions.key,
+        ),
+        equals(androidOptions),
+      );
+    });
+
+    test('config with empty platformOptions returns empty map', () {
+      debugRedirectPlatformTypeOverride = RedirectPlatformType.web;
+
+      final (:url, :options) = constructRedirectUrl(
+        fallback: (_) => RedirectUrlConfig(url: fallbackUrl),
+      );
+
+      expect(options.platformOptions, isEmpty);
     });
   });
 }

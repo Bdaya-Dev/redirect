@@ -88,7 +88,7 @@ class ServerRedirectOptions {
   ///
   /// This is useful when using port `0` (auto-select) and you need to know
   /// the actual port to construct URLs yourself. For example, to add a
-  /// `redirect_uri` parameter to an OAuth authorization URL.
+  /// `redirect_uri` parameter to the target URL.
   ///
   /// The completer is completed after the server starts listening, before
   /// the browser is launched. If the server fails to bind, the completer
@@ -120,7 +120,7 @@ class ServerRedirectOptions {
   /// the loopback server bound to.
   ///
   /// This is the recommended way to construct protocol-specific URLs
-  /// (e.g., OAuth authorization URLs with a `redirect_uri` parameter)
+  /// (e.g., URLs with a `redirect_uri` parameter)
   /// without coupling the redirect package to any particular protocol.
   ///
   /// The builder receives the actual port and should return the complete

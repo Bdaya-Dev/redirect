@@ -20,13 +20,15 @@
 /// ```dart
 /// // Open in a popup window
 /// final handle = redirect.run(
-///   url: authUrl,
+///   url: redirectUrl,
 ///   options: RedirectOptions(
 ///     platformOptions: {
 ///       WebRedirectOptions.key: WebRedirectOptions(
 ///         mode: WebRedirectMode.popup,
-///         popupWidth: 600,
-///         popupHeight: 800,
+///         popupOptions: PopupOptions(
+///           width: 600,
+///           height: 800,
+///         ),
 ///       ),
 ///     },
 ///   ),
@@ -34,7 +36,7 @@
 ///
 /// // Open in a new tab
 /// final handle = redirect.run(
-///   url: authUrl,
+///   url: redirectUrl,
 ///   options: RedirectOptions(
 ///     platformOptions: {
 ///       WebRedirectOptions.key: WebRedirectOptions(

@@ -59,4 +59,7 @@ abstract class RedirectHostApi {
   ///
   /// If [nonce] is empty, cancels all pending operations.
   void cancel(String nonce);
+
+  /// Returns true if a browser that supports Custom Tabs is available.
+  bool supportsCustomTabs();
 }

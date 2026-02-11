@@ -30,7 +30,7 @@ void main() {
 
     test('custom values are stored correctly', () {
       final options = WindowsRedirectOptions(
-        callbackUrl: Uri.parse('http://127.0.0.1:8080/oauth/callback'),
+        callbackUrl: Uri.parse('http://127.0.0.1:8080/callback'),
         openBrowser: false,
         httpResponseBuilder: (_) => const HttpCallbackResponse(
           body: '<h1>Done</h1>',
@@ -39,7 +39,7 @@ void main() {
 
       expect(options.callbackUrl!.host, equals('127.0.0.1'));
       expect(options.callbackUrl!.port, equals(8080));
-      expect(options.callbackUrl!.path, equals('/oauth/callback'));
+      expect(options.callbackUrl!.path, equals('/callback'));
       expect(options.openBrowser, isFalse);
       expect(options.httpResponseBuilder, isNotNull);
     });

@@ -35,9 +35,9 @@ void main() {
           timeout: Duration(milliseconds: 200),
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe,
+              mode: WebRedirectMode.iframe,
               broadcastChannelName: 'test_plugin_run',
-              iframeId: 'test_plugin_iframe',
+              iframeOptions: IframeOptions(id: 'test_plugin_iframe'),
             ),
           },
         ),
@@ -55,9 +55,9 @@ void main() {
           timeout: Duration(milliseconds: 100),
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe,
+              mode: WebRedirectMode.iframe,
               broadcastChannelName: 'test_delegation',
-              iframeId: 'test_delegation_iframe',
+              iframeOptions: IframeOptions(id: 'test_delegation_iframe'),
             ),
           },
         ),
@@ -84,9 +84,9 @@ void main() {
           timeout: Duration(milliseconds: 200),
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe,
+              mode: WebRedirectMode.iframe,
               broadcastChannelName: 'test_multi_1',
-              iframeId: 'test_multi_iframe_1',
+              iframeOptions: IframeOptions(id: 'test_multi_iframe_1'),
             ),
           },
         ),
@@ -98,9 +98,9 @@ void main() {
           timeout: Duration(milliseconds: 200),
           platformOptions: {
             WebRedirectOptions.key: WebRedirectOptions(
-              mode: WebRedirectMode.hiddenIframe,
+              mode: WebRedirectMode.iframe,
               broadcastChannelName: 'test_multi_2',
-              iframeId: 'test_multi_iframe_2',
+              iframeOptions: IframeOptions(id: 'test_multi_iframe_2'),
             ),
           },
         ),

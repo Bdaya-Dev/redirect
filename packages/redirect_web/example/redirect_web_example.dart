@@ -23,14 +23,16 @@
 ///
 /// ```dart
 /// final handle = redirect.run(
-///   url: authUrl,
+///   url: redirectUrl,
 ///   callbackUrlScheme: 'myapp',
 ///   options: RedirectOptions(
 ///     platformOptions: {
 ///       WebRedirectOptions.key: WebRedirectOptions(
 ///         mode: WebRedirectMode.popup,
-///         popupWidth: 600,
-///         popupHeight: 800,
+///         popupOptions: PopupOptions(
+///           width: 600,
+///           height: 800,
+///         ),
 ///       ),
 ///     },
 ///   ),

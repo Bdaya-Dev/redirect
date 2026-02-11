@@ -108,17 +108,14 @@ void main() {
       const options = RedirectOptions();
 
       expect(options.timeout, isNull);
-      expect(options.preferEphemeral, isFalse);
     });
 
     test('custom values are stored correctly', () {
       const options = RedirectOptions(
         timeout: Duration(seconds: 30),
-        preferEphemeral: true,
       );
 
       expect(options.timeout, equals(const Duration(seconds: 30)));
-      expect(options.preferEphemeral, isTrue);
     });
 
     test('copyWith creates new instance with updated values', () {
@@ -126,21 +123,20 @@ void main() {
         timeout: Duration(seconds: 30),
       );
 
-      final copied = original.copyWith(preferEphemeral: true);
+      final copied = original.copyWith(
+        timeout: const Duration(seconds: 60),
+      );
 
-      expect(copied.timeout, equals(const Duration(seconds: 30)));
-      expect(copied.preferEphemeral, isTrue);
-      expect(original.preferEphemeral, isFalse);
+      expect(copied.timeout, equals(const Duration(seconds: 60)));
+      expect(original.timeout, equals(const Duration(seconds: 30)));
     });
 
     test('equality works correctly', () {
       const options1 = RedirectOptions(
         timeout: Duration(seconds: 30),
-        preferEphemeral: true,
       );
       const options2 = RedirectOptions(
         timeout: Duration(seconds: 30),
-        preferEphemeral: true,
       );
 
       expect(options1, equals(options2));
@@ -150,13 +146,12 @@ void main() {
     test('toString returns expected format', () {
       const options = RedirectOptions(
         timeout: Duration(seconds: 30),
-        preferEphemeral: true,
       );
 
       expect(
         options.toString(),
         equals(
-          'RedirectOptions(timeout: 0:00:30.000000, preferEphemeral: true)',
+          'RedirectOptions(timeout: 0:00:30.000000)',
         ),
       );
     });
@@ -167,44 +162,45 @@ void main() {
       const options = WebRedirectOptions();
 
       expect(options.mode, equals(WebRedirectMode.popup));
-      expect(options.popupWidth, equals(500));
-      expect(options.popupHeight, equals(700));
-      expect(options.popupLeft, isNull);
-      expect(options.popupTop, isNull);
+      expect(options.popupOptions.width, equals(500));
+      expect(options.popupOptions.height, equals(700));
+      expect(options.popupOptions.left, isNull);
+      expect(options.popupOptions.top, isNull);
       expect(options.broadcastChannelName, isNull);
-      expect(options.iframeId, isNull);
-      expect(options.autoRegisterServiceWorker, isFalse);
+      expect(options.iframeOptions.id, equals('redirect_iframe'));
     });
 
     test('custom values are stored correctly', () {
       const options = WebRedirectOptions(
         mode: WebRedirectMode.newTab,
-        popupWidth: 400,
-        popupHeight: 500,
-        popupLeft: 100,
-        popupTop: 200,
+        popupOptions: PopupOptions(
+          width: 400,
+          height: 500,
+          left: 100,
+          top: 200,
+        ),
         broadcastChannelName: 'test_channel',
-        iframeId: 'test_iframe',
+        iframeOptions: IframeOptions(id: 'test_iframe'),
       );
 
       expect(options.mode, equals(WebRedirectMode.newTab));
-      expect(options.popupWidth, equals(400));
-      expect(options.popupHeight, equals(500));
-      expect(options.popupLeft, equals(100));
-      expect(options.popupTop, equals(200));
+      expect(options.popupOptions.width, equals(400));
+      expect(options.popupOptions.height, equals(500));
+      expect(options.popupOptions.left, equals(100));
+      expect(options.popupOptions.top, equals(200));
       expect(options.broadcastChannelName, equals('test_channel'));
-      expect(options.iframeId, equals('test_iframe'));
+      expect(options.iframeOptions.id, equals('test_iframe'));
     });
 
     test('fromOptions extracts web options from platformOptions', () {
-      const webOpts = WebRedirectOptions(mode: WebRedirectMode.hiddenIframe);
+      const webOpts = WebRedirectOptions(mode: WebRedirectMode.iframe);
       const options = RedirectOptions(
         platformOptions: {WebRedirectOptions.key: webOpts},
       );
 
       final extracted = WebRedirectOptions.fromOptions(options);
 
-      expect(extracted.mode, equals(WebRedirectMode.hiddenIframe));
+      expect(extracted.mode, equals(WebRedirectMode.iframe));
     });
 
     test('fromOptions returns fallback when not present', () {
@@ -223,14 +219,6 @@ void main() {
 
       expect(extracted.mode, equals(WebRedirectMode.popup));
     });
-
-    test('copyWith updates autoRegisterServiceWorker', () {
-      const options = WebRedirectOptions();
-      final updated = options.copyWith(autoRegisterServiceWorker: true);
-
-      expect(updated.autoRegisterServiceWorker, isTrue);
-      expect(options.autoRegisterServiceWorker, isFalse);
-    });
   });
 
   group('WebRedirectMode', () {
@@ -241,7 +229,7 @@ void main() {
           WebRedirectMode.popup,
           WebRedirectMode.newTab,
           WebRedirectMode.samePage,
-          WebRedirectMode.hiddenIframe,
+          WebRedirectMode.iframe,
         ]),
       );
     });

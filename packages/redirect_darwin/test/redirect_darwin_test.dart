@@ -89,7 +89,14 @@ void main() {
     test('run passes preferEphemeral option', () async {
       final handle = redirect.run(
         url: Uri.parse('https://auth.example.com/authorize'),
-        options: _defaultIosOptions.copyWith(preferEphemeral: true),
+        options: const RedirectOptions(
+          platformOptions: {
+            IosRedirectOptions.key: IosRedirectOptions(
+              callback: CallbackConfig.customScheme('myapp'),
+              preferEphemeral: true,
+            ),
+          },
+        ),
       );
       await handle.result;
 

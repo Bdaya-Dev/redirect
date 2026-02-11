@@ -28,5 +28,9 @@ let package = Package(
                 // .process("PrivacyInfo.xcprivacy"),
             ]
         ),
+        .testTarget(
+            name: "redirect_darwin_tests",
+            dependencies: ["redirect_darwin"]
+        ),
     ]
 )

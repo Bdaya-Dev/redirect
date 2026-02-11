@@ -15,7 +15,7 @@ typedef WebCallbackValidator = FutureOr<bool> Function(Uri uri);
 ///
 /// ```dart
 /// runRedirect(
-///   url: authUrl,
+///   url: redirectUrl,
 ///   options: RedirectOptions(
 ///     platformOptions: {
 ///       WebRedirectOptions.key: WebRedirectOptions(
@@ -33,14 +33,10 @@ class WebRedirectOptions {
   const WebRedirectOptions({
     this.mode = WebRedirectMode.popup,
     this.callbackValidator,
-    this.popupWidth = 500,
-    this.popupHeight = 700,
-    this.popupLeft,
-    this.popupTop,
+    this.popupOptions = const PopupOptions(),
+    this.newTabOptions = const NewTabOptions(),
+    this.iframeOptions = const IframeOptions(),
     this.broadcastChannelName,
-    this.iframeId,
-    this.callbackPath,
-    this.autoRegisterServiceWorker = false,
   });
 
   /// The key used in [RedirectOptions.platformOptions] for web options.
@@ -57,7 +53,7 @@ class WebRedirectOptions {
     return options.getPlatformOption<WebRedirectOptions>(key) ?? fallback;
   }
 
-  /// How to open the authorization URL.
+  /// How to open the redirect URL.
   ///
   /// Defaults to [WebRedirectMode.popup].
   final WebRedirectMode mode;
@@ -82,27 +78,23 @@ class WebRedirectOptions {
   /// ```
   final WebCallbackValidator? callbackValidator;
 
-  /// Width of the popup window in pixels.
+  /// Options for the popup window.
   ///
   /// Only used when [mode] is [WebRedirectMode.popup].
-  /// Defaults to 500.
-  final int popupWidth;
+  /// See [PopupOptions] for available configuration.
+  final PopupOptions popupOptions;
 
-  /// Height of the popup window in pixels.
+  /// Options for the new tab.
   ///
-  /// Only used when [mode] is [WebRedirectMode.popup].
-  /// Defaults to 700.
-  final int popupHeight;
+  /// Only used when [mode] is [WebRedirectMode.newTab].
+  /// See [NewTabOptions] for available configuration.
+  final NewTabOptions newTabOptions;
 
-  /// Left position of the popup window.
+  /// Options for the iframe element.
   ///
-  /// If null, the popup is centered horizontally.
-  final int? popupLeft;
-
-  /// Top position of the popup window.
-  ///
-  /// If null, the popup is centered vertically.
-  final int? popupTop;
+  /// Only used when [mode] is [WebRedirectMode.iframe].
+  /// See [IframeOptions] for available configuration.
+  final IframeOptions iframeOptions;
 
   /// Custom name for the BroadcastChannel used for communication.
   ///
@@ -114,54 +106,53 @@ class WebRedirectOptions {
   /// (e.g., for testing or when coordinating with a custom callback page).
   final String? broadcastChannelName;
 
-  /// Custom ID for the hidden iframe element.
+  /// Relative URL path to the bundled callback HTML page.
   ///
-  /// Only used when [mode] is [WebRedirectMode.hiddenIframe].
-  /// Defaults to `redirect_iframe`.
-  final String? iframeId;
+  /// After `flutter build web`, the `redirect_web` package ships
+  /// `redirect_callback.html` as a Flutter asset at this path relative
+  /// to the app's `<base href>`.
+  static const defaultCallbackPath =
+      'assets/packages/redirect_web/assets/redirect_callback.html';
 
-  /// The path on your origin that receives the callback.
+  /// Resolves the absolute URL for the default bundled callback page.
   ///
-  /// Used by the Service Worker (`redirect_sw.js`) to know which
-  /// navigation requests to intercept. Defaults to `/callback`.
+  /// On web platforms (where [Uri.base] has an `http` or `https` scheme),
+  /// returns the full URL by resolving [defaultCallbackPath] against
+  /// [Uri.base].
   ///
-  /// Has no effect when the Service Worker is not registered.
-  final String? callbackPath;
-
-  /// Whether to auto-register the Service Worker when a redirect starts.
+  /// Returns `null` on non-web platforms since the bundled callback page
+  /// is only relevant for web.
   ///
-  /// When true, `RedirectWeb.registerServiceWorker` is invoked during
-  /// `run()` using [callbackPath] if provided.
-  ///
-  /// Defaults to false (opt-in) to avoid side effects in apps that manage
-  /// their own Service Worker.
-  final bool autoRegisterServiceWorker;
+  /// Example:
+  /// ```dart
+  /// final callbackUrl = WebRedirectOptions.resolveDefaultCallbackUrl();
+  /// // On web → https://myapp.com/assets/packages/redirect_web/assets/redirect_callback.html
+  /// // On non-web → null
+  /// ```
+  static Uri? resolveDefaultCallbackUrl() {
+    final base = Uri.base;
+    if (base.scheme == 'http' || base.scheme == 'https') {
+      return base.resolve(defaultCallbackPath);
+    }
+    return null;
+  }
 
   /// Creates a copy with the given fields replaced.
   WebRedirectOptions copyWith({
     WebRedirectMode? mode,
     WebCallbackValidator? callbackValidator,
-    int? popupWidth,
-    int? popupHeight,
-    int? popupLeft,
-    int? popupTop,
+    PopupOptions? popupOptions,
+    NewTabOptions? newTabOptions,
+    IframeOptions? iframeOptions,
     String? broadcastChannelName,
-    String? iframeId,
-    String? callbackPath,
-    bool? autoRegisterServiceWorker,
   }) {
     return WebRedirectOptions(
       mode: mode ?? this.mode,
       callbackValidator: callbackValidator ?? this.callbackValidator,
-      popupWidth: popupWidth ?? this.popupWidth,
-      popupHeight: popupHeight ?? this.popupHeight,
-      popupLeft: popupLeft ?? this.popupLeft,
-      popupTop: popupTop ?? this.popupTop,
+      popupOptions: popupOptions ?? this.popupOptions,
+      newTabOptions: newTabOptions ?? this.newTabOptions,
+      iframeOptions: iframeOptions ?? this.iframeOptions,
       broadcastChannelName: broadcastChannelName ?? this.broadcastChannelName,
-      iframeId: iframeId ?? this.iframeId,
-      callbackPath: callbackPath ?? this.callbackPath,
-      autoRegisterServiceWorker:
-          autoRegisterServiceWorker ?? this.autoRegisterServiceWorker,
     );
   }
 }

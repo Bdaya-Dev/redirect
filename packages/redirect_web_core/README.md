@@ -19,7 +19,7 @@ Pure Dart web implementation of redirect-based flows. **No Flutter dependency** 
 | `WebRedirectMode.popup` | Centered popup window (customizable size) |
 | `WebRedirectMode.newTab` | New browser tab via `BroadcastChannel` |
 | `WebRedirectMode.samePage` | Same-tab navigation (returns `RedirectPending`) |
-| `WebRedirectMode.hiddenIframe` | Silent token refresh via hidden iframe |
+| `WebRedirectMode.iframe` | Opens in an iframe (hidden by default, configurable) |
 
 ## Installation
 
@@ -36,14 +36,12 @@ import 'package:redirect_web_core/redirect_web_core.dart';
 final handler = RedirectWeb();
 
 final handle = handler.run(
-  url: Uri.parse('https://auth.example.com/authorize?...'),
+  url: Uri.parse('https://example.com/start?...'),
   callbackUrlScheme: 'https',
   options: RedirectOptions(
     platformOptions: {
       WebRedirectOptions.key: WebRedirectOptions(
         mode: WebRedirectMode.popup,
-        callbackPath: '/callback.html',
-        autoRegisterServiceWorker: true,
       ),
     },
   ),
@@ -54,9 +52,12 @@ final result = await handle.result;
 
 ## Web Setup
 
-Run `dart run redirect_web_core:setup` to copy the Service Worker and callback
-page to your `web/` directory. Then set `autoRegisterServiceWorker: true` in
-your `WebRedirectOptions`. See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
+Run `dart run redirect_web_core:setup` to copy the callback relay script
+to your `web/` directory. Then include it on your callback page:
+
+```html
+<script src="redirect_callback.js"></script>
+```
 
 > **Note:** If you're using Flutter, use [`redirect`](https://pub.dev/packages/redirect) instead — it automatically delegates to this package on web.
 

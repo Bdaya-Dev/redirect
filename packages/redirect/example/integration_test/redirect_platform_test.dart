@@ -38,7 +38,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Redirect Plugin'), findsOneWidget);
-      expect(find.text('Authorization URL'), findsOneWidget);
+      expect(find.text('Redirect URL'), findsOneWidget);
       expect(find.text('Callback URL Scheme'), findsOneWidget);
       expect(find.text('Core Options'), findsOneWidget);
       expect(find.text('Prefer Ephemeral Session'), findsOneWidget);

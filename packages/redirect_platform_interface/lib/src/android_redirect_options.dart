@@ -27,6 +27,7 @@ class AndroidRedirectOptions {
   /// Creates Android redirect options.
   const AndroidRedirectOptions({
     required this.callbackUrlScheme,
+    this.preferEphemeral = false,
     this.useCustomTabs = true,
     this.showTitle = false,
     this.enableUrlBarHiding = false,
@@ -61,6 +62,20 @@ class AndroidRedirectOptions {
   /// Must match the `<data android:scheme="..."/>` declared in your
   /// app's `AndroidManifest.xml`.
   final String callbackUrlScheme;
+
+  /// Whether to prefer a private/ephemeral browser session.
+  ///
+  /// When true, uses Ephemeral Custom Tabs which run in a fully isolated
+  /// browser instance. Cookies, cached files, history, and credentials
+  /// exist only for the duration of the session and are deleted when it
+  /// closes.
+  ///
+  /// Requires Chrome 136+ and `androidx.browser:browser:1.9.0-alpha05`
+  /// or later. On devices where ephemeral browsing is not supported,
+  /// regular Custom Tabs are used as a fallback.
+  ///
+  /// Defaults to `false`.
+  final bool preferEphemeral;
 
   /// Whether to use Chrome Custom Tabs when available.
   final bool useCustomTabs;

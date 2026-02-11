@@ -1,7 +1,7 @@
 /// Flutter plugin to facilitate redirect-based flows.
 ///
 /// This package provides a cross-platform API for handling redirect-based
-/// flows such as authorization or payment gateway redirects.
+/// flows.
 ///
 /// ## Usage
 ///
@@ -32,9 +32,12 @@ export 'package:redirect_platform_interface/redirect_platform_interface.dart'
         CustomSchemeCallbackConfig,
         DarwinRedirectOptions,
         HttpsCallbackConfig,
+        IframeOptions,
         IosRedirectOptions,
         LinuxRedirectOptions,
         MacosRedirectOptions,
+        NewTabOptions,
+        PopupOptions,
         RedirectCancelled,
         RedirectFailure,
         RedirectHandle,
@@ -47,6 +50,8 @@ export 'package:redirect_platform_interface/redirect_platform_interface.dart'
         WebRedirectMode,
         WebRedirectOptions,
         WindowsRedirectOptions;
+
+export 'src/construct_redirect_url.dart';
 
 /// Opens [url] and waits for a redirect callback.
 ///

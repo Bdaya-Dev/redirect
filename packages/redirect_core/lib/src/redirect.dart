@@ -43,7 +43,7 @@ abstract interface class RedirectHandler {
   ///
   /// ## Parameters
   ///
-  /// - [url]: The URL to open (e.g., authorization endpoint, payment page)
+  /// - [url]: The URL to open
   /// - [options]: Configuration for timeout, ephemeral sessions, and
   ///   platform-specific callback matching (see platform option classes).
   ///

@@ -14,7 +14,7 @@ The **Android** implementation of the [`redirect`](https://pub.dev/packages/redi
 
 ## How it works
 
-1. Opens the authorization URL in a [Chrome Custom Tab](https://developer.chrome.com/docs/android/custom-tabs/).
+1. Opens the target URL in a [Chrome Custom Tab](https://developer.chrome.com/docs/android/custom-tabs/).
 2. Intercepts the callback via an intent filter matching `callbackUrlScheme`.
 3. Returns the callback URI as a `RedirectSuccess`.
 

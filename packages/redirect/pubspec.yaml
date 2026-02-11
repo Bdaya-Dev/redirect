@@ -1,7 +1,7 @@
 name: redirect
 description: >-
-  A Flutter plugin for redirect-based flows such as OAuth authorization,
-  OIDC, and payment gateways. Supports Android, iOS, macOS, Linux, Windows, and Web.
+  A cross-platform Flutter plugin for redirect-based flows.
+  Supports Android, iOS, macOS, Linux, Windows, and Web.
 version: 0.1.0+1
 repository: https://github.com/Bdaya-Dev/redirect/tree/main/packages/redirect
 topics:

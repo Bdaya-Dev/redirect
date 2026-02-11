@@ -6,7 +6,6 @@ class RedirectOptions {
   /// Creates redirect options.
   const RedirectOptions({
     this.timeout,
-    this.preferEphemeral = false,
     this.platformOptions = const {},
   });
 
@@ -15,22 +14,6 @@ class RedirectOptions {
   /// If null, no timeout is applied and the operation waits indefinitely
   /// (or until cancelled/dismissed by the user).
   final Duration? timeout;
-
-  /// Whether to prefer a private/ephemeral browser session.
-  ///
-  /// When true, the browser session won't share cookies or other browsing
-  /// data with the user's normal browsing session.
-  ///
-  /// Platform behavior:
-  /// - **iOS/macOS**: Sets `prefersEphemeralWebBrowserSession` to true on
-  ///   `ASWebAuthenticationSession`
-  /// - **Android**: Uses incognito-like mode in Custom Tabs if supported
-  /// - **Web**: May open in a private window if browser supports it
-  /// - **Desktop**: Always uses system browser (inherently ephemeral per
-  ///   redirect since there's no session sharing)
-  ///
-  /// Defaults to `false` to allow SSO and session reuse.
-  final bool preferEphemeral;
 
   /// Platform-specific options keyed by platform identifier.
   ///
@@ -70,12 +53,10 @@ class RedirectOptions {
   /// Creates a copy of this options with the given fields replaced.
   RedirectOptions copyWith({
     Duration? timeout,
-    bool? preferEphemeral,
     Map<String, Object>? platformOptions,
   }) {
     return RedirectOptions(
       timeout: timeout ?? this.timeout,
-      preferEphemeral: preferEphemeral ?? this.preferEphemeral,
       platformOptions: platformOptions ?? this.platformOptions,
     );
   }
@@ -85,13 +66,11 @@ class RedirectOptions {
       identical(this, other) ||
       other is RedirectOptions &&
           runtimeType == other.runtimeType &&
-          timeout == other.timeout &&
-          preferEphemeral == other.preferEphemeral;
+          timeout == other.timeout;
 
   @override
-  int get hashCode => Object.hash(timeout, preferEphemeral);
+  int get hashCode => timeout.hashCode;
 
   @override
-  String toString() =>
-      'RedirectOptions(timeout: $timeout, preferEphemeral: $preferEphemeral)';
+  String toString() => 'RedirectOptions(timeout: $timeout)';
 }

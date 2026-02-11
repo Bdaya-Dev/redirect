@@ -5,27 +5,52 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:redirect/redirect.dart';
 
-void main() => runApp(const MyApp());
+import 'package:redirect_example/iframe_panel_stub.dart'
+    if (dart.library.js_interop) 'package:redirect_example/iframe_panel_web.dart'
+    as iframe_panel;
+import 'package:redirect_example/resume_pending_stub.dart'
+    if (dart.library.js_interop) 'package:redirect_example/resume_pending_web.dart'
+    as pending;
 
-/// Builds the test redirect URL.
+void main() {
+  // Check for a pending same-page redirect before running the app.
+  // This must happen early, before Flutter's router processes the URL.
+  final pendingResult = pending.resumePending();
+  runApp(MyApp(pendingResult: pendingResult));
+}
+
+/// Whether the current platform uses Custom Tabs / intent filters.
+bool get _isAndroid =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+/// Whether the current platform uses ASWebAuthenticationSession (iOS/macOS).
+bool get _isDarwin =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS);
+
+/// Returns the default test URL shown in the text field.
 ///
-/// On web, uses an HTTP callback via callback.html since browsers
-/// can't handle custom URL schemes. On other platforms, uses myapp://.
-String _buildTestRedirectUrl({String code = 'test123'}) {
+/// This is only used for display — the actual URL passed to `runRedirect` is
+/// built by [constructRedirectUrl] inside `_buildRedirectConfig`.
+String _defaultTestUrl({String code = 'test123'}) {
   if (kIsWeb) {
-    final origin = Uri.base.origin;
-    final callbackUrl = Uri.encodeComponent(
-      '$origin/callback.html?code=$code&_scheme=myapp',
+    final callbackUrl = WebRedirectOptions.resolveDefaultCallbackUrl()!.replace(
+      queryParameters: {'code': code},
     );
+    final encodedCallback = Uri.encodeComponent(callbackUrl.toString());
     return 'https://httpbin.org/redirect-to'
-        '?url=$callbackUrl&status_code=302';
+        '?url=$encodedCallback&status_code=302';
   }
   return 'https://httpbin.org/redirect-to'
       '?url=myapp%3A%2F%2Fcallback%3Fcode%3D$code&status_code=302';
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.pendingResult});
+
+  /// If non-null, the app was reloaded from a same-page redirect.
+  final RedirectResult? pendingResult;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +60,15 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      debugShowCheckedModeBanner: false,
+      home: HomePage(pendingResult: pendingResult),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Data models
+// ─────────────────────────────────────────────────────────────────────────────
 
 /// Tracks a single redirect handle and its result.
 class _HandleEntry {
@@ -54,8 +84,130 @@ class _HandleEntry {
   bool get isComplete => result != null;
 }
 
+/// Core redirect options that apply to all platforms.
+class _CoreConfig {
+  const _CoreConfig({
+    this.timeoutSeconds = 120,
+  });
+
+  final int? timeoutSeconds;
+
+  _CoreConfig copyWith({
+    int? Function()? timeoutSeconds,
+  }) {
+    return _CoreConfig(
+      timeoutSeconds: timeoutSeconds != null
+          ? timeoutSeconds()
+          : this.timeoutSeconds,
+    );
+  }
+}
+
+/// Android-specific UI config.
+class _AndroidConfig {
+  const _AndroidConfig({
+    this.scheme = 'myapp',
+    this.useCustomTabs = true,
+    this.showTitle = false,
+    this.preferEphemeral = false,
+  });
+
+  final String scheme;
+  final bool useCustomTabs;
+  final bool showTitle;
+  final bool preferEphemeral;
+
+  _AndroidConfig copyWith({
+    String? scheme,
+    bool? useCustomTabs,
+    bool? showTitle,
+    bool? preferEphemeral,
+  }) {
+    return _AndroidConfig(
+      scheme: scheme ?? this.scheme,
+      useCustomTabs: useCustomTabs ?? this.useCustomTabs,
+      showTitle: showTitle ?? this.showTitle,
+      preferEphemeral: preferEphemeral ?? this.preferEphemeral,
+    );
+  }
+}
+
+/// Darwin (iOS / macOS) UI config.
+class _DarwinConfig {
+  const _DarwinConfig({
+    this.useCustomScheme = true,
+    this.scheme = 'myapp',
+    this.httpsHost = 'example.com',
+    this.httpsPath = '/callback',
+    this.preferEphemeral = false,
+  });
+
+  final bool useCustomScheme;
+  final String scheme;
+  final String httpsHost;
+  final String httpsPath;
+  final bool preferEphemeral;
+
+  _DarwinConfig copyWith({
+    bool? useCustomScheme,
+    String? scheme,
+    String? httpsHost,
+    String? httpsPath,
+    bool? preferEphemeral,
+  }) {
+    return _DarwinConfig(
+      useCustomScheme: useCustomScheme ?? this.useCustomScheme,
+      scheme: scheme ?? this.scheme,
+      httpsHost: httpsHost ?? this.httpsHost,
+      httpsPath: httpsPath ?? this.httpsPath,
+      preferEphemeral: preferEphemeral ?? this.preferEphemeral,
+    );
+  }
+
+  CallbackConfig toCallbackConfig() {
+    if (useCustomScheme) return CallbackConfig.customScheme(scheme);
+    return CallbackConfig.https(host: httpsHost, path: httpsPath);
+  }
+}
+
+/// Web-specific UI config.
+class _WebConfig {
+  const _WebConfig({
+    this.mode = WebRedirectMode.popup,
+    this.popupWidth = 500,
+    this.popupHeight = 700,
+    this.showIframePanel = false,
+  });
+
+  final WebRedirectMode mode;
+  final int popupWidth;
+  final int popupHeight;
+  final bool showIframePanel;
+
+  _WebConfig copyWith({
+    WebRedirectMode? mode,
+    int? popupWidth,
+    int? popupHeight,
+    bool? showIframePanel,
+  }) {
+    return _WebConfig(
+      mode: mode ?? this.mode,
+      popupWidth: popupWidth ?? this.popupWidth,
+      popupHeight: popupHeight ?? this.popupHeight,
+      showIframePanel: showIframePanel ?? this.showIframePanel,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HomePage — thin orchestrator, delegates UI to child widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.pendingResult});
+
+  /// If non-null, the app was reloaded from a same-page redirect.
+  final RedirectResult? pendingResult;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -63,48 +215,53 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _urlController = TextEditingController();
-  final _schemeController = TextEditingController(text: 'myapp');
 
   /// All active + completed redirect handles.
   final List<_HandleEntry> _handles = [];
-
   int _handleCounter = 0;
 
-  // Core options
-  bool _preferEphemeral = false;
-  int _timeoutSeconds = 120;
-
-  // Web-specific options
-  WebRedirectMode _webMode = WebRedirectMode.popup;
-  int _popupWidth = 500;
-  int _popupHeight = 700;
+  // ── Platform configs ──────────────────────────────────────────
+  var _core = const _CoreConfig();
+  var _android = const _AndroidConfig();
+  var _darwin = const _DarwinConfig();
+  var _web = const _WebConfig();
 
   @override
   void initState() {
     super.initState();
-    _urlController.text = _buildTestRedirectUrl();
+    _urlController.text = _defaultTestUrl();
+
+    if (widget.pendingResult != null) {
+      _handleCounter++;
+      final entry = _HandleEntry(
+        handle: RedirectHandle(
+          url: Uri.base,
+          result: Future.value(widget.pendingResult),
+          cancel: () async {},
+        ),
+        label: 'Handle #$_handleCounter (resumed)',
+        result: widget.pendingResult,
+      );
+      _handles.add(entry);
+    }
   }
 
   @override
   void dispose() {
     _urlController.dispose();
-    _schemeController.dispose();
     super.dispose();
   }
 
-  bool get _hasActiveHandles => _handles.any((entry) => !entry.isComplete);
+  bool get _hasActiveHandles => _handles.any((e) => !e.isComplete);
 
+  // ── Actions ───────────────────────────────────────────────────
+
+  /// Uses [constructRedirectUrl] to build the URL and options for
+  /// the current platform, then launches the redirect.
   Future<void> _runRedirect() async {
-    final url = Uri.tryParse(_urlController.text.trim());
-    final scheme = _schemeController.text.trim();
-
-    if (url == null) {
+    final inputUrl = Uri.tryParse(_urlController.text.trim());
+    if (inputUrl == null) {
       _showError('Invalid URL');
-      return;
-    }
-
-    if (scheme.isEmpty) {
-      _showError('Callback scheme is required');
       return;
     }
 
@@ -112,28 +269,13 @@ class _HomePageState extends State<HomePage> {
     final label = 'Handle #$_handleCounter';
 
     try {
-      final handle = runRedirect(
-        url: url,
-        options: RedirectOptions(
-          timeout: Duration(seconds: _timeoutSeconds),
-          preferEphemeral: _preferEphemeral,
-          platformOptions: {
-            if (kIsWeb)
-              WebRedirectOptions.key: WebRedirectOptions(
-                mode: _webMode,
-                popupWidth: _popupWidth,
-                popupHeight: _popupHeight,
-                callbackPath: '/callback.html',
-                autoRegisterServiceWorker: true,
-              ),
-          },
-        ),
-      );
+      final (:url, :options) = _buildRedirectConfig(inputUrl);
+
+      final handle = runRedirect(url: url, options: options);
 
       final entry = _HandleEntry(handle: handle, label: label);
       setState(() => _handles.add(entry));
 
-      // Await result asynchronously — doesn't block launching more handles.
       final result = await handle.result;
       if (!mounted) return;
       setState(() => entry.result = result);
@@ -141,7 +283,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       final failEntry = _HandleEntry(
         handle: RedirectHandle(
-          url: url,
+          url: inputUrl,
           result: Future.value(
             RedirectFailure(error: e, stackTrace: StackTrace.current),
           ),
@@ -156,8 +298,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _cancelHandle(_HandleEntry entry) async {
     await entry.handle.cancel();
-    // The awaiter in _runRedirect will update the entry when the
-    // cancel completes.
   }
 
   Future<void> _cancelAllHandles() async {
@@ -170,18 +310,78 @@ class _HomePageState extends State<HomePage> {
 
   void _clearCompleted() {
     setState(() {
-      _handles.removeWhere((entry) => entry.isComplete);
+      _handles.removeWhere((e) => e.isComplete);
     });
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  // ── Redirect config builder (uses constructRedirectUrl) ──────
+
+  ({Uri url, RedirectOptions options}) _buildRedirectConfig(Uri inputUrl) {
+    return constructRedirectUrl(
+      timeout: _core.timeoutSeconds != null
+          ? Duration(seconds: _core.timeoutSeconds!)
+          : null,
+      fallback: (_) => RedirectUrlConfig(url: inputUrl),
+      onAndroid: (_) => RedirectUrlConfig(
+        url: inputUrl,
+        platformOptions: {
+          AndroidRedirectOptions.key: AndroidRedirectOptions(
+            callbackUrlScheme: _android.scheme,
+            preferEphemeral: _android.preferEphemeral,
+            useCustomTabs: _android.useCustomTabs,
+            showTitle: _android.showTitle,
+          ),
+        },
+      ),
+      onDarwin: (platform) => RedirectUrlConfig(
+        url: inputUrl,
+        platformOptions: {
+          if (platform == RedirectPlatformType.ios)
+            IosRedirectOptions.key: IosRedirectOptions(
+              callback: _darwin.toCallbackConfig(),
+              preferEphemeral: _darwin.preferEphemeral,
+            )
+          else
+            MacosRedirectOptions.key: MacosRedirectOptions(
+              callback: _darwin.toCallbackConfig(),
+              preferEphemeral: _darwin.preferEphemeral,
+            ),
+        },
+      ),
+      onDesktop: (_) => RedirectUrlConfig(
+        url: inputUrl,
+        platformOptions: {
+          WindowsRedirectOptions.key: const WindowsRedirectOptions(),
+          LinuxRedirectOptions.key: const LinuxRedirectOptions(),
+        },
+      ),
+      onWeb: (_) => RedirectUrlConfig(
+        url: inputUrl,
+        platformOptions: {
+          WebRedirectOptions.key: WebRedirectOptions(
+            mode: _web.mode,
+            popupOptions: PopupOptions(
+              width: _web.popupWidth,
+              height: _web.popupHeight,
+            ),
+            iframeOptions: const IframeOptions(
+              hidden: false,
+              parentSelector: '#iframe-container-body',
+              style: 'width: 100%; height: 100%; border: none;',
+            ),
+          ),
+        },
       ),
     );
   }
+
+  // ── Build ─────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -203,14 +403,17 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildInfoCard(),
+            _InfoCard(
+              onResetUrl: () {
+                _urlController.text = _defaultTestUrl();
+              },
+            ),
             const SizedBox(height: 16),
 
-            // URL input
             TextField(
               controller: _urlController,
               decoration: const InputDecoration(
-                labelText: 'Authorization URL',
+                labelText: 'Redirect URL',
                 border: OutlineInputBorder(),
                 helperText: 'The URL to redirect to (e.g., sign-in or consent)',
               ),
@@ -218,71 +421,165 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
 
-            // Callback scheme
-            TextField(
-              controller: _schemeController,
-              decoration: const InputDecoration(
-                labelText: 'Callback URL Scheme',
-                border: OutlineInputBorder(),
-                helperText: 'Custom URL scheme to intercept (e.g., myapp)',
-              ),
+            _CoreOptionsCard(
+              config: _core,
+              onChanged: (v) => setState(() => _core = v),
             ),
             const SizedBox(height: 16),
 
-            _buildCoreOptionsCard(),
-            const SizedBox(height: 16),
-
-            if (kIsWeb) ...[
-              _buildWebOptionsCard(),
+            if (_isAndroid) ...[
+              _AndroidOptionsCard(
+                config: _android,
+                onChanged: (v) => setState(() => _android = v),
+              ),
               const SizedBox(height: 16),
             ],
 
-            _buildActionButtons(),
+            if (_isDarwin) ...[
+              _DarwinOptionsCard(
+                config: _darwin,
+                onChanged: (v) => setState(() => _darwin = v),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            if (kIsWeb) ...[
+              _WebOptionsCard(
+                config: _web,
+                onChanged: (v) {
+                  setState(() => _web = v);
+                  iframe_panel.setIframePanelVisible(v.showIframePanel);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            _ActionButtons(
+              onRun: _runRedirect,
+              onCancelAll: _hasActiveHandles ? _cancelAllHandles : null,
+            ),
 
             if (_handles.isNotEmpty) ...[
               const SizedBox(height: 24),
-              _buildHandlesList(),
+              _HandlesList(
+                handles: _handles,
+                onCancel: _cancelHandle,
+              ),
             ],
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildInfoCard() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Extracted child widgets — each only rebuilds when its own props change.
+// Prefer StatelessWidget over helper methods per official guidance.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A reusable card header row with an icon, title, and optional trailing.
+class _CardHeader extends StatelessWidget {
+  const _CardHeader({
+    required this.icon,
+    required this.title,
+    this.iconColor,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color? iconColor;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = iconColor ?? Theme.of(context).colorScheme.primary;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        ?trailing,
+      ],
+    );
+  }
+}
+
+/// A colored info banner with an icon and text.
+class _InfoBanner extends StatelessWidget {
+  const _InfoBanner({
+    required this.color,
+    required this.icon,
+    required this.text,
+  });
+
+  final Color color;
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Info card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({required this.onResetUrl});
+
+  final VoidCallback onResetUrl;
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Test Redirect Flow',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    _urlController.text = _buildTestRedirectUrl();
-                  },
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Reset URL'),
-                ),
-              ],
+            _CardHeader(
+              icon: Icons.info_outline,
+              title: 'Test Redirect Flow',
+              trailing: TextButton.icon(
+                onPressed: onResetUrl,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Reset URL'),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               kIsWeb
                   ? 'Uses httpbin.org to simulate a redirect. '
-                        'The callback goes to callback.html which '
+                        'The callback goes to the bundled '
+                        'redirect_callback.html asset which '
                         'sends the result back via BroadcastChannel.\n\n'
                         'You can launch multiple concurrent handles '
                         'to test parallel redirect flows.'
@@ -297,56 +594,70 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
 
-  Widget _buildCoreOptionsCard() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Core options card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CoreOptionsCard extends StatelessWidget {
+  const _CoreOptionsCard({
+    required this.config,
+    required this.onChanged,
+  });
+
+  final _CoreConfig config;
+  final ValueChanged<_CoreConfig> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.settings,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Core Options',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
+            const _CardHeader(icon: Icons.settings, title: 'Core Options'),
             const SizedBox(height: 8),
-            SwitchListTile(
-              title: const Text('Prefer Ephemeral Session'),
-              subtitle: const Text(
-                'Use private browsing mode when available',
-              ),
-              value: _preferEphemeral,
-              onChanged: (v) {
-                setState(() => _preferEphemeral = v);
-              },
-            ),
             ListTile(
               title: const Text('Timeout'),
-              subtitle: Text('$_timeoutSeconds seconds'),
-              trailing: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 200),
-                child: Slider(
-                  value: _timeoutSeconds.toDouble(),
-                  min: 10,
-                  max: 300,
-                  divisions: 29,
-                  label: '$_timeoutSeconds s',
-                  onChanged: (v) {
-                    setState(
-                      () => _timeoutSeconds = v.round(),
-                    );
-                  },
-                ),
+              subtitle: Text(
+                config.timeoutSeconds != null
+                    ? '${config.timeoutSeconds} seconds'
+                    : 'Disabled',
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (config.timeoutSeconds != null)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 200),
+                      child: Slider(
+                        value: config.timeoutSeconds!.toDouble(),
+                        min: 10,
+                        max: 300,
+                        divisions: 29,
+                        label: '${config.timeoutSeconds} s',
+                        onChanged: (v) {
+                          onChanged(
+                            config.copyWith(
+                              timeoutSeconds: () => v.round(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  Switch(
+                    value: config.timeoutSeconds != null,
+                    onChanged: (v) {
+                      onChanged(
+                        config.copyWith(
+                          timeoutSeconds: () => v ? 120 : null,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ],
@@ -354,34 +665,271 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
 
-  Widget _buildWebOptionsCard() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Android options card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AndroidOptionsCard extends StatefulWidget {
+  const _AndroidOptionsCard({
+    required this.config,
+    required this.onChanged,
+  });
+
+  final _AndroidConfig config;
+  final ValueChanged<_AndroidConfig> onChanged;
+
+  @override
+  State<_AndroidOptionsCard> createState() => _AndroidOptionsCardState();
+}
+
+class _AndroidOptionsCardState extends State<_AndroidOptionsCard> {
+  late final TextEditingController _schemeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _schemeController = TextEditingController(text: widget.config.scheme);
+  }
+
+  @override
+  void dispose() {
+    _schemeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.web,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.secondary,
+            const _CardHeader(icon: Icons.android, title: 'Android Options'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _schemeController,
+              decoration: const InputDecoration(
+                labelText: 'Callback URL Scheme',
+                border: OutlineInputBorder(),
+                helperText:
+                    'Must match <data android:scheme="..."/> '
+                    'in AndroidManifest.xml',
+              ),
+              onChanged: (v) {
+                widget.onChanged(widget.config.copyWith(scheme: v));
+              },
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('Use Custom Tabs'),
+              subtitle: const Text('Chrome Custom Tabs vs plain intent'),
+              value: widget.config.useCustomTabs,
+              onChanged: (v) {
+                widget.onChanged(widget.config.copyWith(useCustomTabs: v));
+              },
+            ),
+            SwitchListTile(
+              title: const Text('Show Title'),
+              subtitle: const Text('Display page title in toolbar'),
+              value: widget.config.showTitle,
+              onChanged: (v) {
+                widget.onChanged(widget.config.copyWith(showTitle: v));
+              },
+            ),
+            SwitchListTile(
+              title: const Text('Prefer Ephemeral Session'),
+              subtitle: const Text(
+                'Use Ephemeral Custom Tabs (Chrome 136+)',
+              ),
+              value: widget.config.preferEphemeral,
+              onChanged: (v) {
+                widget.onChanged(
+                  widget.config.copyWith(preferEphemeral: v),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Darwin (iOS / macOS) options card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DarwinOptionsCard extends StatefulWidget {
+  const _DarwinOptionsCard({
+    required this.config,
+    required this.onChanged,
+  });
+
+  final _DarwinConfig config;
+  final ValueChanged<_DarwinConfig> onChanged;
+
+  @override
+  State<_DarwinOptionsCard> createState() => _DarwinOptionsCardState();
+}
+
+class _DarwinOptionsCardState extends State<_DarwinOptionsCard> {
+  late final TextEditingController _schemeController;
+  late final TextEditingController _hostController;
+  late final TextEditingController _pathController;
+
+  @override
+  void initState() {
+    super.initState();
+    _schemeController = TextEditingController(text: widget.config.scheme);
+    _hostController = TextEditingController(text: widget.config.httpsHost);
+    _pathController = TextEditingController(text: widget.config.httpsPath);
+  }
+
+  @override
+  void dispose() {
+    _schemeController.dispose();
+    _hostController.dispose();
+    _pathController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final platformLabel = defaultTargetPlatform == TargetPlatform.iOS
+        ? 'iOS'
+        : 'macOS';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _CardHeader(
+              icon: Icons.apple,
+              title: '$platformLabel Options',
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Callback Matching',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(
+                  value: true,
+                  label: Text('Custom Scheme'),
+                  icon: Icon(Icons.link),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Web-Specific Options',
-                  style: Theme.of(context).textTheme.titleMedium,
+                ButtonSegment(
+                  value: false,
+                  label: Text('HTTPS'),
+                  icon: Icon(Icons.lock),
                 ),
               ],
+              selected: {widget.config.useCustomScheme},
+              onSelectionChanged: (v) {
+                widget.onChanged(
+                  widget.config.copyWith(useCustomScheme: v.first),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            if (widget.config.useCustomScheme)
+              TextField(
+                controller: _schemeController,
+                decoration: const InputDecoration(
+                  labelText: 'URL Scheme',
+                  border: OutlineInputBorder(),
+                  helperText: 'e.g., myapp',
+                ),
+                onChanged: (v) {
+                  widget.onChanged(widget.config.copyWith(scheme: v));
+                },
+              )
+            else ...[
+              TextField(
+                controller: _hostController,
+                decoration: const InputDecoration(
+                  labelText: 'Host',
+                  border: OutlineInputBorder(),
+                  helperText: 'e.g., example.com',
+                ),
+                onChanged: (v) {
+                  widget.onChanged(widget.config.copyWith(httpsHost: v));
+                },
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _pathController,
+                decoration: const InputDecoration(
+                  labelText: 'Path',
+                  border: OutlineInputBorder(),
+                  helperText: 'e.g., /callback',
+                ),
+                onChanged: (v) {
+                  widget.onChanged(widget.config.copyWith(httpsPath: v));
+                },
+              ),
+            ],
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('Prefer Ephemeral Session'),
+              subtitle: const Text(
+                'Private session (no shared cookies with Safari)',
+              ),
+              value: widget.config.preferEphemeral,
+              onChanged: (v) {
+                widget.onChanged(
+                  widget.config.copyWith(preferEphemeral: v),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Web options card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _WebOptionsCard extends StatelessWidget {
+  const _WebOptionsCard({
+    required this.config,
+    required this.onChanged,
+  });
+
+  final _WebConfig config;
+  final ValueChanged<_WebConfig> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _CardHeader(
+              icon: Icons.web,
+              title: 'Web-Specific Options',
+              iconColor: theme.colorScheme.secondary,
             ),
             const SizedBox(height: 12),
 
             // Redirect strategy
             Text(
               'Redirect Strategy',
-              style: Theme.of(context).textTheme.titleSmall,
+              style: theme.textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
             SegmentedButton<WebRedirectMode>(
@@ -402,37 +950,37 @@ class _HomePageState extends State<HomePage> {
                   icon: Icon(Icons.arrow_forward),
                 ),
                 ButtonSegment(
-                  value: WebRedirectMode.hiddenIframe,
+                  value: WebRedirectMode.iframe,
                   label: Text('Iframe'),
-                  icon: Icon(Icons.visibility_off),
+                  icon: Icon(Icons.web_asset),
                 ),
               ],
-              selected: {_webMode},
+              selected: {config.mode},
               onSelectionChanged: (v) {
-                setState(() => _webMode = v.first);
+                onChanged(config.copyWith(mode: v.first));
               },
             ),
             const SizedBox(height: 8),
             Text(
-              switch (_webMode) {
+              switch (config.mode) {
                 WebRedirectMode.popup => 'Opens a centered popup window.',
                 WebRedirectMode.newTab => 'Opens in a new browser tab.',
                 WebRedirectMode.samePage =>
                   'Navigates current page (returns Pending).',
-                WebRedirectMode.hiddenIframe =>
-                  'Silent refresh via hidden iframe.',
+                WebRedirectMode.iframe =>
+                  'Opens in an iframe in the side panel.',
               },
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.secondary,
               ),
             ),
 
             // Popup dimensions
-            if (_webMode == WebRedirectMode.popup) ...[
+            if (config.mode == WebRedirectMode.popup) ...[
               const Divider(height: 24),
               Text(
                 'Popup Dimensions',
-                style: Theme.of(context).textTheme.titleSmall,
+                style: theme.textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
               Row(
@@ -441,15 +989,15 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Width: $_popupWidth px'),
+                        Text('Width: ${config.popupWidth} px'),
                         Slider(
-                          value: _popupWidth.toDouble(),
+                          value: config.popupWidth.toDouble(),
                           min: 300,
                           max: 800,
                           divisions: 10,
                           onChanged: (v) {
-                            setState(
-                              () => _popupWidth = v.round(),
+                            onChanged(
+                              config.copyWith(popupWidth: v.round()),
                             );
                           },
                         ),
@@ -461,15 +1009,15 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Height: $_popupHeight px'),
+                        Text('Height: ${config.popupHeight} px'),
                         Slider(
-                          value: _popupHeight.toDouble(),
+                          value: config.popupHeight.toDouble(),
                           min: 400,
                           max: 900,
                           divisions: 10,
                           onChanged: (v) {
-                            setState(
-                              () => _popupHeight = v.round(),
+                            onChanged(
+                              config.copyWith(popupHeight: v.round()),
                             );
                           },
                         ),
@@ -480,28 +1028,52 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
 
-            // Same-page warning
-            if (_webMode == WebRedirectMode.samePage) ...[
+            // Same-page info
+            if (config.mode == WebRedirectMode.samePage) ...[
               const Divider(height: 24),
-              _buildInfoBanner(
+              const _InfoBanner(
                 color: Colors.orange,
                 icon: Icons.warning_amber,
                 text:
-                    'Same-page mode navigates away from this '
-                    'app. The result will be RedirectPending.',
+                    'Same-page mode navigates away from this app. '
+                    'The server redirects to the bundled callback page, '
+                    'which stores the result in sessionStorage and '
+                    'navigates back to the app. Call '
+                    'resumePendingRedirect() on startup to read the '
+                    'stored result.',
               ),
             ],
 
-            // Hidden iframe note
-            if (_webMode == WebRedirectMode.hiddenIframe) ...[
+            // Iframe panel toggle
+            if (config.mode == WebRedirectMode.iframe) ...[
               const Divider(height: 24),
-              _buildInfoBanner(
+              Row(
+                children: [
+                  Text(
+                    'Iframe Panel',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const Spacer(),
+                  Switch(
+                    value: config.showIframePanel,
+                    onChanged: (v) {
+                      onChanged(config.copyWith(showIframePanel: v));
+                    },
+                  ),
+                ],
+              ),
+            ],
+
+            // Iframe note
+            if (config.mode == WebRedirectMode.iframe) ...[
+              const Divider(height: 24),
+              const _InfoBanner(
                 color: Colors.blue,
                 icon: Icons.info,
                 text:
-                    'Hidden iframe is for silent refresh. '
-                    'Many providers block this with '
-                    'X-Frame-Options.',
+                    'Iframe mode (visible in side panel). '
+                    'Many servers block iframe embedding '
+                    'via X-Frame-Options or CSP.',
               ),
             ],
           ],
@@ -509,50 +1081,36 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
 
-  Widget _buildInfoBanner({
-    required Color color,
-    required IconData icon,
-    required String text,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// Action buttons
+// ─────────────────────────────────────────────────────────────────────────────
 
-  Widget _buildActionButtons() {
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons({
+    required this.onRun,
+    this.onCancelAll,
+  });
+
+  final VoidCallback onRun;
+  final VoidCallback? onCancelAll;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: FilledButton.icon(
-            onPressed: _runRedirect,
+            onPressed: onRun,
             icon: const Icon(Icons.play_arrow),
             label: const Text('Run Redirect'),
           ),
         ),
-        if (_hasActiveHandles) ...[
+        if (onCancelAll != null) ...[
           const SizedBox(width: 8),
           FilledButton.tonalIcon(
-            onPressed: _cancelAllHandles,
+            onPressed: onCancelAll,
             icon: const Icon(Icons.cancel),
             label: const Text('Cancel All'),
           ),
@@ -560,29 +1118,55 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
+}
 
-  /// Displays all handles (active + completed) in a list.
-  Widget _buildHandlesList() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Handles list
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HandlesList extends StatelessWidget {
+  const _HandlesList({
+    required this.handles,
+    required this.onCancel,
+  });
+
+  final List<_HandleEntry> handles;
+  final ValueChanged<_HandleEntry> onCancel;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Text(
-            'Handles (${_handles.length})',
+            'Handles (${handles.length})',
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
-        ..._handles.reversed.map(_buildHandleCard),
+        ...handles.reversed.map(
+          (entry) => _HandleCard(entry: entry, onCancel: onCancel),
+        ),
       ],
     );
   }
+}
 
-  Widget _buildHandleCard(_HandleEntry entry) {
+class _HandleCard extends StatelessWidget {
+  const _HandleCard({
+    required this.entry,
+    required this.onCancel,
+  });
+
+  final _HandleEntry entry;
+  final ValueChanged<_HandleEntry> onCancel;
+
+  @override
+  Widget build(BuildContext context) {
     final result = entry.result;
 
     if (result == null) {
-      // Active / in-progress
       return Card(
         child: ListTile(
           leading: const SizedBox(
@@ -592,23 +1176,38 @@ class _HomePageState extends State<HomePage> {
           ),
           title: Text(entry.label),
           subtitle: Text(
-            entry.handle.url.host,
+            '${entry.handle.url.host}  •  ${entry.handle.nonce}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           trailing: IconButton(
             icon: const Icon(Icons.cancel_outlined),
             tooltip: 'Cancel',
-            onPressed: () => _cancelHandle(entry),
+            onPressed: () => onCancel(entry),
           ),
         ),
       );
     }
 
-    return _buildResultCard(entry.label, result);
+    return _ResultCardFromResult(label: entry.label, result: result);
   }
+}
 
-  Widget _buildResultCard(String label, RedirectResult result) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Result display widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ResultCardFromResult extends StatelessWidget {
+  const _ResultCardFromResult({
+    required this.label,
+    required this.result,
+  });
+
+  final String label;
+  final RedirectResult result;
+
+  @override
+  Widget build(BuildContext context) {
     return switch (result) {
       RedirectSuccess(:final uri) => _ResultCard(
         title: '$label — Success',
@@ -617,10 +1216,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           _ResultRow('Scheme', uri.scheme),
           _ResultRow('Host', uri.host),
-          _ResultRow(
-            'Path',
-            uri.path.isEmpty ? '/' : uri.path,
-          ),
+          _ResultRow('Path', uri.path.isEmpty ? '/' : uri.path),
           const Divider(),
           Text(
             'Query Parameters:',
@@ -628,18 +1224,10 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 8),
           ...uri.queryParameters.entries.map(
-            (e) => _ResultRow(
-              e.key,
-              e.value,
-              canCopy: true,
-            ),
+            (e) => _ResultRow(e.key, e.value, canCopy: true),
           ),
           const SizedBox(height: 8),
-          _ResultRow(
-            'Full URI',
-            uri.toString(),
-            canCopy: true,
-          ),
+          _ResultRow('Full URI', uri.toString(), canCopy: true),
         ],
       ),
       RedirectCancelled() => _ResultCard(
@@ -647,10 +1235,7 @@ class _HomePageState extends State<HomePage> {
         color: Colors.orange,
         icon: Icons.cancel,
         children: const [
-          Text(
-            'The redirect was cancelled by user or '
-            'timed out.',
-          ),
+          Text('The redirect was cancelled by user or timed out.'),
         ],
       ),
       RedirectPending() => _ResultCard(
@@ -670,11 +1255,7 @@ class _HomePageState extends State<HomePage> {
         color: Colors.red,
         icon: Icons.error,
         children: [
-          _ResultRow(
-            'Error',
-            error.toString(),
-            canCopy: true,
-          ),
+          _ResultRow('Error', error.toString(), canCopy: true),
           if (stackTrace != null && kDebugMode) ...[
             const SizedBox(height: 8),
             ExpansionTile(
@@ -766,9 +1347,7 @@ class _ResultRow extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
           Expanded(
@@ -785,9 +1364,7 @@ class _ResultRow extends StatelessWidget {
               icon: const Icon(Icons.copy, size: 16),
               onPressed: () {
                 unawaited(
-                  Clipboard.setData(
-                    ClipboardData(text: value),
-                  ),
+                  Clipboard.setData(ClipboardData(text: value)),
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

@@ -1,7 +1,7 @@
 /// Core types and interfaces for redirect-based flows.
 ///
 /// This package provides platform-agnostic types and interfaces for handling
-/// redirect-based flows (e.g., authorization flows, payment gateway redirects).
+/// redirect-based flows.
 ///
 /// It can be used with:
 /// - Pure Dart CLI applications
@@ -11,7 +11,10 @@ library;
 
 export 'src/callback_config.dart';
 export 'src/http_callback_response.dart';
+export 'src/iframe_options.dart';
+export 'src/new_tab_options.dart';
 export 'src/nonce.dart';
+export 'src/popup_options.dart';
 export 'src/redirect.dart';
 export 'src/redirect_handle.dart';
 export 'src/redirect_options.dart';
